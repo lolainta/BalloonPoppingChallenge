@@ -1,3 +1,5 @@
+> **This fork (branch `greenbean`) adds our TASTI 2026 finale agent. See [GREENBEAN.md](GREENBEAN.md).** Everything below is the official README.
+
 # Balloon Popping Challenge: A 6-DoF Rocket GNC Simulation [Gymnasium](https://gymnasium.farama.org/) Environment
 
 <a target="_blank" href="https://colab.research.google.com/github/ARRC-Rocket/BalloonPoppingChallenge/blob/main/doc/examples/evaluate_scenario_colab.ipynb">
