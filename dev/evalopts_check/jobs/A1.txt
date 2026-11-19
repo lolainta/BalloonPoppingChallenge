@@ -1,0 +1,5 @@
+# A: all options off, pre-change tree (git archive HEAD -> scratch "pre") vs this worktree; 5-output checkpoint
+A5_pre $TMPDIR/pre ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000
+A5_post ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000
+A5_pre $TMPDIR/pre ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10001
+A5_post ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10001

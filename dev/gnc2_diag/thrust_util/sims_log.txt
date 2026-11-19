@@ -1,0 +1,84 @@
+base 10_CoolBa 8
+base 10_SpaceY 5
+base 11_Mochi 6
+base 11_near_miss 7
+base 12_Apex 8
+base 13_Apex 8
+base 13_Yaka 7
+base 14_SpaceBerry 7
+base 16_SpaceBerry 9
+base 16_TeamDJ 6
+base 18_Taoyuan 9
+s10 10_CoolBa 5
+s10 10_SpaceY 4
+s10 11_Mochi 7
+s10 11_near_miss 7
+s10 12_Apex 8
+s10 13_Apex 8
+s10 13_Yaka 3
+s10 14_SpaceBerry 6
+s10 16_SpaceBerry 6
+s10 16_TeamDJ 6
+s10 18_Taoyuan 6
+s08 10_CoolBa 3
+s08 10_SpaceY 5
+s08 11_Mochi 2
+s08 11_near_miss 6
+s08 12_Apex 6
+s08 13_Apex 6
+s08 13_Yaka 1
+s08 14_SpaceBerry 3
+s08 16_SpaceBerry 4
+s08 16_TeamDJ 2
+s08 18_Taoyuan 4
+fullsat 10_CoolBa 5
+fullsat 10_SpaceY 5
+fullsat 11_Mochi 4
+fullsat 11_near_miss 6
+fullsat 12_Apex 6
+fullsat 13_Apex 6
+fullsat 13_Yaka 0
+fullsat 14_SpaceBerry 2
+fullsat 16_SpaceBerry 5
+fullsat 16_TeamDJ 3
+fullsat 18_Taoyuan 5
+fullsat10 10_CoolBa 4
+fullsat10 10_SpaceY 3
+fullsat10 11_Mochi 3
+fullsat10 11_near_miss 5
+fullsat10 12_Apex 4
+fullsat10 13_Apex 4
+fullsat10 13_Yaka 1
+fullsat10 14_SpaceBerry 4
+fullsat10 16_SpaceBerry 5
+fullsat10 16_TeamDJ 3
+fullsat10 18_Taoyuan 5
+excess2 10_CoolBa 1
+excess2 10_SpaceY 2
+excess2 11_Mochi 1
+excess2 11_near_miss 2
+excess2 12_Apex 0
+excess2 13_Apex 0
+excess2 13_Yaka 0
+excess2 14_SpaceBerry 1
+excess2 16_SpaceBerry 0
+excess2 16_TeamDJ 1
+excess2 18_Taoyuan 0
+noclamp 10_CoolBa 8
+noclamp 10_SpaceY 5
+noclamp 11_Mochi 6
+noclamp 11_near_miss 7
+noclamp 12_Apex 8
+noclamp 13_Apex 8
+noclamp 13_Yaka 7
+noclamp 14_SpaceBerry 7
+noclamp 16_SpaceBerry 9
+noclamp 16_TeamDJ 6
+noclamp 18_Taoyuan 9
+== base: pops 80 (in burn 80), median hop 3.41 mean 3.51, first pop median 6.67
+== s10: pops 66 (in burn 64), median hop 3.62 mean 4.31, first pop median 6.33
+== s08: pops 42 (in burn 40), median hop 4.94 mean 5.22, first pop median 6.81
+== fullsat: pops 47 (in burn 44), median hop 4.24 mean 5.39, first pop median 6.25
+== fullsat10: pops 41 (in burn 40), median hop 6.18 mean 6.55, first pop median 6.18
+== excess2: pops 8 (in burn 8), median hop 5.02 mean 5.02, first pop median 6.48
+== noclamp: pops 80 (in burn 79), median hop 3.35 mean 3.57, first pop median 6.71

@@ -1,0 +1,11 @@
+10_CoolBa      releases while rocket <8 m AGL:  6; within 8 m: 0; popped: 0 | 
+10_SpaceY      releases while rocket <8 m AGL:  5; within 8 m: 0; popped: 0 | 
+11_Mochi       releases while rocket <8 m AGL:  7; within 8 m: 0; popped: 0 | 
+11_near_miss   releases while rocket <8 m AGL:  5; within 8 m: 0; popped: 0 | b63@t+0.48 d10.5 (1s before 10.5, rank 3/69) ; b59@t+2.48 d11.7 (1s before 10.4, rank 2/66) 
+12_Apex        releases while rocket <8 m AGL: 12; within 8 m: 2; popped: 1 | b32@t+2.48 d7.1 (1s before 10.5, rank 3/26) ; b90@t+2.98 d2.0 (1s before 3.6, rank 1/25) POP
+13_Apex        releases while rocket <8 m AGL: 12; within 8 m: 2; popped: 1 | b32@t+2.48 d7.1 (1s before 10.5, rank 3/26) ; b90@t+2.98 d2.0 (1s before 3.6, rank 1/25) POP
+13_Yaka        releases while rocket <8 m AGL: 14; within 8 m: 2; popped: 2 | b85@t+3.67 d5.1 (1s before 19.9, rank 1/53) POP; b7@t+5.67 d3.1 (1s before 7.5, rank 1/49) POP
+14_SpaceBerry  releases while rocket <8 m AGL:  5; within 8 m: 0; popped: 0 | b79@t+1.98 d10.3 (1s before 8.5, rank 1/82) 
+16_SpaceBerry  releases while rocket <8 m AGL:  7; within 8 m: 1; popped: 1 | b32@t+2.40 d4.4 (1s before 9.5, rank 3/26) POP; b90@t+2.90 d8.6 (1s before 3.6, rank 1/25) 
+16_TeamDJ      releases while rocket <8 m AGL:  8; within 8 m: 0; popped: 0 | 
+18_Taoyuan     releases while rocket <8 m AGL:  9; within 8 m: 2; popped: 2 | b32@t+2.30 d2.7 (1s before 9.8, rank 3/26) POP; b90@t+2.80 d6.3 (1s before 3.0, rank 1/25) POP

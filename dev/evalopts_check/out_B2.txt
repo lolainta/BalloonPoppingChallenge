@@ -1,0 +1,12 @@
+B_eob_pick     seed 10000  hash 6e750d7aa71047a5  steps 7057  popped 10  launch 34.00  eob_pick=1  counts {'eob_pick_eval': 172}  first 62.06  523s
+    pops [(39.62, 9), (42.62, 40), (45.29, 52), (48.64, 10), (52.39, 17), (53.49, 23), (56.23, 80), (60.27, 3), (62.66, 71), (64.6, 43)]
+B_eob_align    seed 10000  hash 6e750d7aa71047a5  steps 7057  popped 10  launch 34.00  eob_align=20  counts {'eob_hold': 23, 'eob_hold_min_deg': np.float64(72.9)}  first 63.78  521s
+    pops [(39.62, 9), (42.62, 40), (45.29, 52), (48.64, 10), (52.39, 17), (53.49, 23), (56.23, 80), (60.27, 3), (62.66, 71), (64.6, 43)]
+B_eob_pick     seed 10001  hash 70008a266970a35e  steps 8285  popped 11  launch 41.50  eob_pick=1  counts {'eob_pick_eval': 83}  first 70.44  529s
+    pops [(47.68, 75), (49.03, 17), (51.19, 65), (53.61, 84), (56.17, 23), (60.76, 99), (62.49, 61), (65.37, 19), (68.61, 3), (69.43, 87), (70.97, 0)]
+B_eob_align    seed 10001  hash 70008a266970a35e  steps 8285  popped 11  launch 41.50  eob_align=20  counts {'eob_hold': 24, 'eob_hold_min_deg': np.float64(154.3)}  first 71.27  509s
+    pops [(47.68, 75), (49.03, 17), (51.19, 65), (53.61, 84), (56.17, 23), (60.76, 99), (62.49, 61), (65.37, 19), (68.61, 3), (69.43, 87), (70.97, 0)]
+B_eob_pick_r6  seed 10000  hash 6e750d7aa71047a5  steps 7057  popped 10  launch 34.00  eob_pick=1 eob_pick_r=6  counts {'eob_pick_eval': 172}  first 62.06  538s
+    pops [(39.62, 9), (42.62, 40), (45.29, 52), (48.64, 10), (52.39, 17), (53.49, 23), (56.23, 80), (60.27, 3), (62.66, 71), (64.6, 43)]
+B_eob_align90  seed 10000  hash 7ac767c783a0be48  steps 7058  popped 10  launch 34.00  eob_align=90  counts {'eob_hold': 23, 'eob_hold_min_deg': np.float64(73.1), 'eob_align': 23}  first 63.78  560s
+    pops [(39.62, 9), (42.62, 40), (45.29, 52), (48.64, 10), (52.39, 17), (53.49, 23), (56.23, 80), (60.27, 3), (62.66, 71), (64.59, 43)]

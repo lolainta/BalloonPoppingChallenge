@@ -1,0 +1,1 @@
+clamp-like steps: 1699, after last in-burn pop: 925 (0.54)

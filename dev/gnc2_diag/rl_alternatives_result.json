@@ -1,0 +1,438 @@
+{
+ "analyses": [
+  {
+   "perspective": "SAC, both discrete pointer SAC and continuous/hybrid SAC, judged against async PPO + SIL for this problem and the 12 days left before 10/10. Bottom line: SAC's two selling points are sample efficiency and entropy-driven exploration. Sample efficiency is not what limits you. The data point to an action-space/route ceiling. First, PPO re-adapts in about 2.5-5M decisions. Second, 25M decisions and flat LR/γ/SIL/averaging A/Bs show that sample count is not binding. Third, a simulator oracle over the current action space is only +0.84 pops. Exploration, on the other hand, is a real problem. I measured it on the plateaued checkpoint (s4bw4@25,670,400 with its SL, scenario 4, 54 sampled episodes, 9.29-9.6 pops):\n- Target-head entropy averages 0.022 nats (log n_alive ≈ 4.2).\n- 94% of decisions have top-1 probability > 0.99.\n- At the ~11.6 'new target' decisions per episode, top-1 is 0.964, so PPO tries a non-argmax next balloon only about 0.42 times per episode.\n- The stretch head's top-1 is 0.978.\nSequence choice is about 2/3 of the arrival-geometry gap in §132, so this collapse matters, especially once plan B makes low-bend sequences worth more. You can get that one useful SAC ingredient (automatic entropy temperature α) inside PPO with about 20 lines of code. Switching algorithms costs 5-8 of the 12 days and adds a critic-driven actor update, which this domain has repeatedly punished (critic search 7.69->4.89; the DP value was worse than useless; the launch-state value explains ≤5% of variance). Two premises in the brief are also off. The learner is not CPU-only (dev/async.sbatch requests a GPU). Replay staleness is not an issue for PPO today (lag 0.46-0.72 versions, 0% dropped), so V-trace/off-policy correction gains nothing either.",
+   "recommendation": "Do not switch to SAC (discrete or continuous) or DQN. Implement plans A and B with the existing async PPO. Add one SAC ingredient to PPO: automatic entropy tuning. Learn a log α per head (target, stretch, and plan B's new 'next' pointer) with loss α·(H_target − H), applied only at decisions where the argmax picks a new target. Suggested targets: about 0.15 nats for the target head, 0.3 for the next head, 0.1 for stretch. Start the 'next' head from the target logits divided by about 3, not a straight copy, so it does not begin collapsed. Also log per-head entropy in the learner; it is not logged today. If you want a continuous lead parameter (window/gain toward the next balloon), add it as a Gaussian PPO head using the existing RL3_ATTC pattern, zero-initialised at the lead10 settings. Only do that if a 1-day sweep shows a state-dependent lead is worth more than about 0.2 pops over a fixed lead. The strict-order response so far is flat (lead05 87, lead10 88, lead15 83 vs 80 baseline), which suggests it is not. Drop full low-level control entirely: §132 puts its ceiling at about 0 (attitude loop within 0.04 s/hop of optimal, thrust utilisation 0.91 vs 0.92).",
+   "options": [
+    {
+     "name": "Discrete SAC (per-token pointer Q x 4 speeds) replacing async PPO on the current action",
+     "mechanism_vs_bottleneck": "SAC would optimise better inside the same target+speed action space. The §132 bottleneck is the route: which balloon is next (about 2/3) plus arrival velocity toward it (about 1/3). The current action cannot command the second part, because the GNC ignores the next balloon until the handover about 0.58 s before the pop. Inside this action space the ceiling is small: the simulator-branching beam-search oracle beat the policy by only +0.84 pops/seed, the policy agreed with it on 93-95% of choices, and SIL on those demos moved held-out results by about 0 (§63). Sample count is not binding either. PPO re-adapted after the scenario switch from 7.25 to 8.75 in about 2.5M decisions and reached about 9.05 by 5.3M (s4cont det_eval). The cluster produces about 25-32M decisions/day. The one relevant SAC lever is entropy, which option 3 provides without the critic risk.",
+     "expected_gain_pops": "-1.0 to +0.3 within the window; point estimate about -0.2. An off-policy critic warm-up dip is likely, and the upside is capped well below the +0.84 oracle bound.",
+     "confidence": "high",
+     "implementation_days": 5,
+     "warm_start": "The actor can copy the PPO weights exactly (same logits). The critic has to be learned from an empty buffer: nothing stores full transitions (the learner discards segments after each update; T1DATA holds only engagement rows for the SL). The behaviour policy picks the argmax 99.1% of the time, so there is no data on alternative actions and Q for untried balloons is pure extrapolation. The actor would need to stay frozen for about 2-5M transitions of critic warm-up and then be KL-constrained to the PPO policy, which recreates PPO's trust region at 5x the code.",
+     "risks": "1. Critic reliability is repeatedly bad in this domain: V-based search 7.69->4.89 (§60 B); the DP planner's value was worse than useless (§103); the launch-state value R² was ≤0.05 against an episode SD of 1.1-1.2 pops (§86/§91). SAC's actor effectively follows softmax(Q/α), so Q errors become action errors directly.\n2. Q overestimation across about 400 masked actions.\n3. The target entropy is ill-defined for a variable balloon set (log n_alive runs from 4.6 down to 0).\n4. Memory: 1564 floats = 6.3 KB per transition, so a 2M buffer is about 12.5 GB, and the learner already OOMed at 70 GB (§120).\n5. The replay is invalidated every time the GNC changes (plans A and B).\n6. It consumes about 7-8 of the 12 days and competes with the plan-B retrain for the whole cluster.",
+     "one_day_experiment": "A kill test of the Q-critic premise, not a full SAC run.\n1. Collect about 3-4M transitions from s4bw4@25,670,400 on half the cluster for about 8 h, with the target logits at temperature 2 so alternative actions get some data.\n2. Train twin pointer-Q critics (10-step returns, γ 0.99) on the learner GPU for about 4 h.\n3. Compare 'policy top-3 re-ranked by Q' against the plain policy on 192 new held-out seeds, paired.\nKill discrete SAC unless the re-rank is at least +0.15 (about 2 SE). The prior from §60 B is a clear loss."
+    },
+    {
+     "name": "Continuous or hybrid SAC for a lead-out or residual action on top of plan B (and full low-level control)",
+     "mechanism_vs_bottleneck": "This does aim at the arrival-velocity third of the bottleneck. Top teams apply about 4 m/s² lateral acceleration toward the next balloon in the last ~0.8 s and bend about 34° between balloons, vs our 47-54°. But most of the lead's value is structural: knowing the next balloon and spending spare thrust on it, which plan B already adds. The fixed-parameter response is flat: strict lead05 87, lead10 88, lead15 83 vs 80 baseline. So a state-dependent gain can add only a few percent over the best fixed setting, and for 1-2 continuous dims with a strong prior a PPO Gaussian head works as well as SAC; the code already has one (rl3_net attc, async_ppo.gauss). A residual on the GNC command every 0.5 s is too coarse for a 0.8 s terminal manoeuvre. A faster residual means about 5x the decisions and a longer credit-assignment horizon. Full 100 Hz control has a ceiling near 0 (§132: attitude loop within 0.04 s/hop of optimal, thrust utilisation 0.91 vs 0.92).",
+     "expected_gain_pops": "Learned lead gain/window (any algorithm) over plan B's fixed lead: +0.0 to +0.2. Learned residual: 0 to +0.3 with -0.5 downside. Full low-level control in 12 days: about 0, or strongly negative. SAC's advantage over PPO for the same continuous head: about 0.",
+     "confidence": "medium",
+     "implementation_days": 5,
+     "warm_start": "In PPO: a Gaussian head with zero weights and its bias set to the lead10 parameters (T_LEAD 1.0 s, DELTA 0.7 m) and a small log-std. That gives a bit-identical start, the same pattern used for attc in §78, in about 0.5-1 day. In SAC: a hybrid pointer+continuous critic Q(s, i, u) learned from scratch, with the same empty-buffer and extrapolation problems as option 1. Hybrid SAC (P-DQN/MP-DQN style) is non-standard and fragile.",
+     "risks": "Exploration noise on thrust in the last second causes misses: the hit radius is 1.5 m, which is why lead10 caps the extra displacement at 0.7 m. The flight policy is co-adapted to the GNC, which is why earlier GNC sweeps always hurt with it held fixed. A residual without plan B's explicit next-balloon input has nothing good to aim at. The free-mode lead with a naive next-balloon guess scored 103 vs 105 because the guess matched only 32% of the time.",
+     "one_day_experiment": "No training needed. Use dev/gnc2_diag/thrust_util/sim_lead.py with the handover teacher (chain_sim mode 2) and sweep T_LEAD in {0.5, 0.8, 1.0, 1.3} x DELTA in {0.4, 0.7, 1.0, 1.5} on the 11 replays via gnc2_bench.sbatch (about 2-3 h). Compare the best fixed pair with a per-flight oracle choice. If the oracle beats the best fixed pair by fewer than 3 of about 96 pops (<0.2/episode), a learned continuous lead is worthless whatever the algorithm; keep a fixed lead in plan B. If it wins by more than 6 pops, add a PPO Gaussian lead head, not SAC."
+    },
+    {
+     "name": "Recommended: add SAC's automatic entropy temperature to async PPO for the plan-B retrain",
+     "mechanism_vs_bottleneck": "I measured an exploration collapse on s4bw4@25,670,400 (54 sampled episodes, scenario 4):\n- Target-head entropy is 0.022 nats on average; 94% of decisions have top-1 probability > 0.99.\n- At the 11.6 'new target' decisions per episode, entropy is 0.095 and top-1 is 0.964, so there are only 0.42 non-argmax next-balloon trials per episode.\n- Stretch top-1 is 0.978.\nSIL makes it sharper: it imitates the policy's own ≥10-pop episodes, and those are about 99% argmax. §132 attributes about 2/3 of the arrival-angle gap (35° vs 19°) to sequence choice. After plan B the GNC leads toward the chosen next balloon, so low-bend sequences become worth more. With about 0.4 alternative trials per episode and a return SD of about 1.2 pops, PPO will barely find them. SAC's automatic α holds a target entropy, and that is the only part of SAC that addresses this bottleneck. It transplants into PPO while keeping GAE, clipping, the BC/PPO warm start and SIL.",
+     "expected_gain_pops": "0 to +0.3 on top of plan B (point estimate about +0.1). It mainly helps plan B's route gain show up; lead10 alone was worth +8/80 in strict order, about +0.8/episode if the sequence adapts. Standalone on the current action it is probably about 0.",
+     "confidence": "low",
+     "implementation_days": 0.5,
+     "warm_start": "Exact: same weights and optimizer. Initialise log α so the current entropy is barely penalised at first, and raise the target gradually over about 1M decisions. Apply the entropy term only at 'new target' decisions, to avoid jitter mid-hop. Initialise plan B's new 'next' head from the target logits divided by about 3, not a straight copy, so it starts exploring.",
+     "risks": "Extra action noise will lower the sampled training reward by roughly 0.2-0.4. Evaluation is argmax, so this is not a direct loss, but it reduces the number of ≥10-pop SIL demos. Entropy that is too high hurt in v1 (ppo3 ent 0.01 -> 1.85 vs 0.003 -> 3.9, §8), so keep the targets small and apply them only at new-target decisions. A 1-day A/B can resolve only differences ≥0.2 (§93: SE about 0.07 at 384 seeds).",
+     "one_day_experiment": "Fork s4bw4@25,670,400 into two arms, control and adaptive-α, each on half the cluster for 12 h (about 5-6M decisions each at 130-180 decisions/s). Log per-head entropy and run a §93-style paired evaluation on 384 new seeds, averaging 2-3 adjacent checkpoints per arm.\n- Adopt it if the gain is at least +0.14.\n- If it ties while keeping new-target entropy at or above 0.1, still make it the default for the plan-B retrain, where exploration matters more.\n- Kill it if it trails by more than 0.1."
+    }
+   ],
+   "evidence_from_repo": [
+    "Measured today (scratch scripts in /tmp/sac_probe/probe.py, an.py, an2.py; runs/s4bw4/rl3_policy_25670400.npz + rl2_sl_25670400.npz; scenario 4; seeds 31000-31033 and 32000-32019): 54 sampled episodes, 9.29 / 9.6 pops. Target-head entropy 0.022 nats; top-1 > 0.99 on 94% of decisions; sampled target differs from the argmax on 0.9% of decisions. At 'new target' decisions (11.6/episode): top-1 0.964, 0.42 non-argmax trials/episode. Stretch top-1 0.978, 1.66 non-argmax stretch samples/episode. Value mean 4.36, SD 2.04.",
+    "Learner logs on login02, logs/async_768136.log and async_768031.log: lag 0.46-0.72 versions, lag_hist about [50%, 48%, 2-8%, 0], dropped 0/300. 155 and 221 decisions/s (136 decisions/s, 5,790 episodes/h in status.json). Sampled mean_r 9.0-9.4, about the same as argmax eval, consistent with a near-deterministic policy.",
+    "dev/async.sbatch:3 requests --gres=gpu:1 and 160G, so the learner is not CPU-only. Memory note bpc-rl-guidance: PPO update takes 0.36 s on the 4090 vs 11 s on 8 CPU threads.",
+    "dev/async_ppo.py:27-28: SEG 64, MAX_LAG 2, ENT 0.003, CLIP 0.1. Lines 33 and 461-463: SIL weight 1.0 with 1024 samples per minibatch, imitating own ≥10-pop episodes, which sharpens an already near-deterministic policy. Line 240, gauss(): a Gaussian continuous head already exists in PPO (RL3_ATTC); dev/rl3_net.py:30-35 has the matching attc head with zero init and a learned log-std.",
+    "BalloonPoppingGymEnv/agents/rl2_agent.py:22-23: STRETCH (0.6, 0.8, 1.0, 1.3), DECIDE=50 (0.5 s). The action is a pointer over 100 slots x 4 speeds; the GNC flies it.",
+    "DECISION_LOG §63 (line 599): the simulator beam-search teacher beat the policy by +0.84 pops over 113 seeds; the policy agreed with it on 93.1-95.1% of first choices; SIL on its demos barely moved held-out. This caps any better optimiser inside the current action space.",
+    "DECISION_LOG §60 B (line 542): run-time critic search 7.69 -> 4.89 because the critic is unreliable off-distribution. §103: planner value was worse than useless; rare 'clearly better' overrides still lost 1.2 pops. §86/§91 (line 1167): launch-state value R² of 0.046 on 43k episodes against an episode SD of 1.13 pops. Together: return noise swamps critic-based action ranking.",
+    "runs/s4cont/det_eval.csv: 7.25 @ 57.6k -> 8.12 @ 1.15M -> 8.75 @ 2.55M -> 9.05 @ 5.34M -> 9.25 @ 12M. PPO re-adapts to changed dynamics in about 2.5-5M decisions (about 4-8 h), so sample efficiency is not binding for the plan-B retrain. runs/s4bw4/det_eval.csv has sat at 9.1-9.6 from 11M to 25.5M.",
+    "DECISION_LOG §132 and dev/gnc2_diag/workflow_result.json (chaining caveat): about 2/3 of the free-mode arrival-angle gap (35° vs 19°) comes from the policy's sequence choice and needs a policy change plus retraining. All GNC-only chaining variants with the fixed policy scored about 0. dev/gnc2_diag/thrust_util/sim_lead.py: strict lead05 87, lead10 88, lead15 83 vs 80 baseline (flat response in T_LEAD/DELTA; DELTA caps extra displacement at 0.7 m because the hit radius is 1.5 m). freelead10 with a naive next-balloon guess scored 103 vs 105; the guess matched only 32% of the time.",
+    "DECISION_LOG §26 (lines 235-241) already ranked discrete SAC and V-trace above DQN and deferred them. V-trace is now moot given 0% dropped and lag under 1 version. §120: the learner OOMed at 70 GB after 17 h, so an SAC replay (6.3 KB per transition, about 12.5 GB for 2M) is a real memory risk. §8: v1 entropy 0.01 -> 1.85 vs 0.003 -> 3.9, so entropy must be targeted and small."
+   ]
+  },
+  {
+   "perspective": "價值函數 / off-policy 離散方法的角度：DQN 系列（Double/Dueling、branching DQN、以氣球 token 為指標的 pointer-Q、Rainbow、R2D2/Ape-X 分散式 replay），以及帶 off-policy 修正的 PPO 變體（V-trace/IMPALA、PPG、更多 SIL/replay）。核心問題：我們的上限是不是樣本效率？結論是否定的。平台期的成因是「動作空間 + GNC 表達不了路線串接」（§132），再加上我這次實測到的「目標頭幾乎已經確定性（探索崩掉）」。這兩個問題換成 DQN/SAC 都解決不了，在 PPO 裡面就能直接處理。",
+   "recommendation": "不要換成 SAC 或 DQN，也不要加 V-trace 或 PPG。維持 async PPO，把力氣放在已經規劃好的 (A) 燃燒結束模式和 (B) 雙目標動作上。另外從我的角度加兩個便宜、直接對準瓶頸的 PPO 內部設計。第一，「下一顆」頭的 credit assignment：做成以「已選目標」為 query 的自回歸 pointer，權重從 tgt head 複製，一開始就等於 policy 自己的第二選擇（實測中性，−0.05 ± 0.17）。它的 log-prob 沿用 rl3_net 的 phase masking，只在 GNC 真的會用到的最後約 1 s 計入，每跳只 commit 一次；lead-out 增益也要逐步拉高。第二，在分叉點把 target/stretch logits 除以溫度 T（argmax 不變，所以確定性評估完全不受影響），重新打開路線探索。理由：(1) 丟棄率 0–1.3%，V-trace 沒有東西可修。(2) PPO 對動力學改變適應很快：換到 scenario 4 後，2.3M 決策（約 3–4 h）就 +0.31 ± 0.09。叢集一天能產生約 15–17M 決策，到 10/10 還有約 150M，樣本不是稀缺資源。(3) 4 種學習器擾動（SIL 11、LR 減半、γ 0.995、checkpoint 平均）都 ≤ 1–2 SE。主線斜率約 0.01 顆 / M 決策，是平台，不是「學得慢」。(4) 在這個專案裡，「對學到的價值取 argmax 選目標」已經失敗兩次（§60 search_k 7.69 → 4.89；§103 DP 的 J 與實際擊破相關 −0.008，推翻 policy 就傷分）。DQN 的貪婪 argmax 正是同一類風險，而且 100 個目標上的最大化偏差在有雜訊的 scenario 4 更嚴重。(5) 換演算法要 3–6 天，而且會和 B 的重新訓練搶同一個叢集。預期到資格賽的淨效果是負的。如果使用者仍想驗證 DQN，下面有一個 1 天的 offline pointer-Q「影子推翻」實驗可以直接判死或判活。",
+   "options": [
+    {
+     "name": "整個換成 DQN 系列（pointer-Q over tokens + Double/Dueling + n-step + Ape-X 式分散 replay；Rainbow/R2D2 同類）",
+     "mechanism_vs_bottleneck": "瓶頸（§132）是每跳開始時到下一顆的理論最短時間：我們 2.35 s，他們 1.72 s。成因是選哪一顆和打中當下的速度方向，而 GNC 在 policy 換目標（打中前約 0.58 s）之前完全不看下一顆。DQN 用的是同一組動作（目標, 速度檔），天花板一樣。它唯一的機制優勢是樣本重用，但樣本不是限制。n-step Q 在下一顆的 credit 上也沒有新東西：GAE(γ 0.99, λ 0.95) 一跳（約 6 個決策）後權重還有 0.69，兩跳 0.48。貪婪 argmax 還會利用 Q 在 100 個目標上的估計誤差，和 §60、§103 的失敗同型。",
+     "expected_gain_pops": "到 10/10：−0.5 到 +0.1（中位數約 −0.2；最可能是來不及追回 PPO 的 9.3，最後退回 PPO，白白吃掉 B 的時間和算力）",
+     "confidence": "high",
+     "implementation_days": 5,
+     "warm_start": "部分可用。trunk（g/t0/t1/blocks）和 value head 可以當 dueling 的 V(s)。但每個 token 的 advantage/Q head 等於從零開始：policy 幾乎確定性（keep 決策 top1−top2 logit 差中位數 40 nats，換目標決策 8.1 nats），而回報差距 < 1 顆，logits 裡沒有未選動作的校準 Q 資訊，soft-Q 換算（Q = τ·logπ + V）在這裡病態。BC（6.04）和 25M 步的 PPO 成果不能直接沿用。現在也沒有存完整 transition（learner 用完就丟），offline 預訓練要先重新收資料。",
+     "risks": "最大化偏差 / deadly triad，在陣風和感測器雜訊下更糟。ε-greedy 隨機換目標一次就可能浪費 2–3 s，約 1 顆。branching DQN 假設各分支獨立，但目標與速度檔、目標與下一顆強耦合。事件驅動的決策間隔讓 Q 目標更難穩定。要調的超參數很多，11 天內大概只有一次機會。唯一的好處是評估也是貪婪，沒有抽樣 / 確定性不一致的問題，不過主線的抽樣 ≠ argmax 只佔 3.4% 的決策，這個好處很小。",
+     "one_day_experiment": "用 offline pointer-Q 做影子推翻測試（做法類比 §103）。(1) 用 s4bw4@25,670,400、T=2 抽樣收 2–3M 個 transition（全叢集約 3–4 h，順便擴大覆蓋）。(2) 在 learner GPU 上 fit Double/Dueling pointer-Q head（n=10），trunk 分凍結和不凍結兩版（約 4 h）。(3) 384 個新 seed 配對：影子模式看 Q 差距和實際擊破的相關；主動模式在 Q 認為某目標比 policy 選的好 ≥ δ（0.2 / 0.5 顆）時推翻。相關 ≈ 0 或推翻 ≤ 0 就判死（依 §103 的經驗，這是預期結果）。就算是正的，也只證明有 +x 的上限，不代表要換掉整條線。"
+    },
+    {
+     "name": "離散 SAC（pointer-softmax actor + 每個 token 的 twin Q + 自動溫度）",
+     "mechanism_vs_bottleneck": "保留 policy 輸出和 BC，這是 §26 當時認為比 DQN 合適的原因。但它帶來的還是 off-policy 樣本效率和最大熵探索，兩者都沒對到『路線串接』這個瓶頸。最大熵探索可以用更便宜的方式拿到（見 PPO 溫度重設那一項）。連續起飛姿態用 SAC 也沒意義：§91 的 4.3 萬局資料顯示姿態影響 < 0.1 顆。",
+     "expected_gain_pops": "到 10/10：−0.4 到 +0.1",
+     "confidence": "high",
+     "implementation_days": 4,
+     "warm_start": "actor 可以完全沿用（現在的 target/stretch head）。twin Q 從零開始，理由同上（未選動作沒有資料）。自動溫度會先把幾乎確定性的 policy 大幅攤平，初期抽樣表現下降。",
+     "risks": "文獻裡離散 SAC 的溫度和 Q 很不穩定。actor 會去追尚未收斂的 Q，這和 §84 的教訓同類：V_pad 的回歸梯度把共用 trunk 打亂，所有起飛分離分支一開始就崩。另外也會和 B 搶算力。",
+     "one_day_experiment": "和 DQN 用同一個實驗：新東西就是每個 token 的 Q，影子推翻測試同時也判定 SAC 的 critic 能不能用。另外量一下用校準過的 soft-Q 重建出的 policy，和現行 policy 的 KL。"
+    },
+    {
+     "name": "在 async_ppo 加 V-trace / IMPALA 修正",
+     "mechanism_vs_bottleneck": "只修正 worker 落後 learner 造成的 off-policy 偏差，和路線瓶頸無關。現在的落後幾乎為零：batch 改成 19,200 後丟棄率 0–1.3%，落後分布約 20/210/70/2/0（大多 1 個版本），PPO ratio + clip 0.1 就夠了。",
+     "expected_gain_pops": "0 ± 0.05",
+     "confidence": "high",
+     "implementation_days": 0.5,
+     "warm_start": "完全沿用（只改 advantage 和 target 的計算）",
+     "risks": "幾乎沒有風險，但也沒有收益。只有 worker 再大增、或丟棄率回到 > 5% 時才值得做（§29 定下的門檻）。",
+     "one_day_experiment": "不需要叢集時間：B 分支上線後讀 runs/<run>/status.json 的 dropped_pct 和 lag_hist。dropped < 5% 且 lag 大多 ≤ 1 就不做（5 分鐘）。"
+    },
+    {
+     "name": "PPG（phasic policy gradient）/ 加重 SIL / replay 重用",
+     "mechanism_vs_bottleneck": "PPG 把 value 蒸餾和 policy 更新分成不同階段，減少共用 trunk 的干擾。§84 證明這個網路確實會被 value 梯度干擾，這點算弱支持。但主線的 value head 已經穩定訓練 25M 步，沒有崩壞的跡象。SIL 在 s4 已經開著（≥10 顆）：門檻改 11 是 +0.000 / +0.010，而且在幾乎確定性的 policy 上 SIL 的梯度 ∝ (1−p) ≈ 0，模仿自己的高分局幾乎不改變行為。這些都不會改變 GNC 什麼時候知道下一顆。",
+     "expected_gain_pops": "0 到 +0.15",
+     "confidence": "low",
+     "implementation_days": 1.5,
+     "warm_start": "完全沿用",
+     "risks": "要佔用一個 A/B 名額（半個叢集 8 h 以上），和 B 搶算力。PPG 的 aux 階段也會改變更新節奏，需要重新確認穩定性。",
+     "one_day_experiment": "從 s4bw4@25,670,400 分叉，每 16 次更新做一次 aux 階段（value 蒸餾 + 對舊 policy 的 KL），和對照組各跑 8 h，384 個新 seed、相同步數配對；≥ 2 SE（約 +0.14）才採用。建議資格賽前不做。"
+    },
+    {
+     "name": "保留 PPO，把 B 的「下一顆」頭照 credit assignment 設計（自回歸 pointer + phase-masked log-prob + 每跳 commit 一次 + 從 tgt head 複製初始化 + lead-out 增益漸進）",
+     "mechanism_vs_bottleneck": "這一項直接對準瓶頸：讓 GNC 在最後約 1 s 提早知道下一顆，並把剩餘推力用在朝向下一顆。strict 模式在下一顆已知時 80 → 88 顆，11 份 replay 沒有一份變差。policy 也會因此有動機選轉折較小的序列：free 模式約 2/3 的方向偏差來自序列（轉折角 46.7° vs 他們 33.8°）。從我的角度看有四個設計點：(a) 下一顆的效果只在最後約 1 s 出現，一跳約 6.5 個決策裡只有約 2 個相關。如果每個決策都抽下一顆、都算 log-prob，其餘約 70% 的梯度項是純噪音，還會增加 PPO 聯合 ratio 的變異、拖累 target head 的 clip。沿用 rl3_net.py:54–58 的 phase masking，只在 lead 視窗 commit 一次並計入 log-prob。(b) 以已選目標的 token embedding 當 query，因為下一顆高度依賴這一顆，獨立的 branching 頭表達不了。(c) 從 tgt head 複製，加一個以目標為 query、零初始化的 bilinear 項，起點等於 policy 自己的第二選擇（§132 實測 −0.05 ± 0.17，中性）。用 min-reach-time 猜當起點會 −2 顆（只猜對 32%），不能用。(d) lead-out 增益在前約 1–2M 決策內從 0 拉到滿，讓 critic 跟上新的飛行動態（換 SL 的經驗是改動力學會先掉約 0.3）。",
+     "expected_gain_pops": "B 本身 +0.3 到 +1.0（中位數約 +0.5）。推算方式：每跳起始最短時間的 0.63 s 差距補回 30–50%，約 0.2–0.3 s / 每跳 2.9 s，也就是燃燒期間擊破數 +7–12%。這些設計相對於「樸素的 B」多出的部分約 +0.1 到 +0.4，主要是讓 B 在剩下幾天內學得起來、不先掉分。",
+     "confidence": "medium",
+     "implementation_days": 1,
+     "warm_start": "完全沿用：trunk、target、stretch、value、launch 都不動。新頭從 tgt 複製並加零初始化項，分叉當下的行為等於現行 policy + 中性的 lead-out（再乘上漸進增益），確定性評估起點約 9.3。",
+     "risks": "free 模式下只改 GNC、不重新訓練的串接變體都約 0（±0.2），所以增益完全取決於重新訓練能不能改變序列選擇。現在的 target head 探索已經崩掉（見下一項），所以要一起開溫度。lead 視窗太早（τ = 1.0 s）在 strict 模式會崩（57 顆），視窗要 ≤ 0.7–1.0 s。scenario 4 的雜訊可能壓縮 strict 模式量到的增益。",
+     "one_day_experiment": "B 的 GNC lead-out 做好後，從 s4bw4@25,670,400 分兩支各跑 8 h：(a) 本設計（masked、commit、複製初始化、增益漸進）；(b) 樸素版（每個決策都抽、全部計入、零初始化、增益一開始就滿）。看的指標：384 個新 seed 的確定性擊破數（對暫停點 9.30）、每跳起始理論最短時間（2.35 s → ?）、連續兩顆的轉折角（47° → < 40°）、下一顆頭的熵變化。+8 h 時 (a) ≥ 9.30 且轉折角在下降，就繼續；+8 h 沒有領先 ≥ 2 SE，就依 §132 的規則停。"
+    },
+    {
+     "name": "分叉時做 argmax 不變的溫度重設（target/stretch logits 除以 T≈3），重新打開路線探索",
+     "mechanism_vs_bottleneck": "我實測 s4bw4@25,670,400（scenario 4，10 局，平均 9.4 顆）：keep 決策的目標熵中位數 1.6e-16 nats，top1−top2 logit 差中位數 40；真正決定序列的換目標決策（n = 71）logit 差中位數 8.1（第二選擇機率約 3e-4），只有 17% 的 p_top < 0.9；抽樣 ≠ argmax 只佔 9/261 個決策；速度檔熵中位數 2.5e-5。softmax 梯度 ∝ p_j，未選動作的梯度幾乎是 0，所以 LR、γ、SIL 怎麼調都動不了。ENT 0.003 對標準化後的 advantage 太小，容許十幾 nats 的差距。B 會改變哪些序列是好的，但 target head 目前幾乎不會試別的序列。把 tgt.w、tgt.b、prior（和 str.w、str.b）除以 T，argmax 完全不變，但換目標決策的差距會從 8.1 降到約 2.7 nats（第二選擇約 6%）。這也是 DQN 或 SAC 賣的『探索』，而且在 PPO 裡改一行就有。",
+     "expected_gain_pops": "只用現有動作空間：0 到 +0.3（中位數約 +0.1）；和 B 搭配時是讓 B 的序列效益能被學到的前提",
+     "confidence": "low",
+     "implementation_days": 0.25,
+     "warm_start": "完全沿用，只縮放兩個 head 的權重。分叉當下每一步的確定性動作和原本完全相同，可以驗證到位元一致。",
+     "risks": "訓練中的抽樣分數會暫時下降，SIL ≥ 10 的示範變少。critic 是在幾乎確定性的 policy 上學的，初期 advantage 較吵。PPO 會在幾小時內重新銳化，探索窗口有限（必要時只對 target head 在換目標決策上加 ENT）。§49 的 tune9（lr 3e-4）讓 policy 變分散、確定性評估退步，但那是在少數 seed 上微調，和 argmax 不變的縮放不同，不過要注意。",
+     "one_day_experiment": "現在就能做（B 還在實作，叢集幾乎閒置）。從 s4bw4@25,670,400 分叉，T = 3，先在 96 個 seed 上確認分叉點的確定性動作和原本位元一致；半個叢集跑 8–12 h，另一半繼續主線當對照，384 個新 seed、相同步數配對。同時追蹤換目標決策的 logit 差中位數（8.1 → 約 2.7 → ?），看探索多快又崩回去。≥ +0.14（2 SE）就在 B 的分叉一併使用；≤ 0 就證明平台是動作空間的天花板，全力做 B。"
+    },
+    {
+     "name": "備案：用模擬器分岔算下一顆的反事實 advantage（vine rollout），或用 pair-Q（目標, 下一顆）當 critic",
+     "mechanism_vs_bottleneck": "如果 PPO 在約 1 天內學不動下一顆頭（熵不降、轉折角不變），瓶頸就是這個頭的訊號太弱：一跳省 0.3 s ≈ 0.1 顆，而每局回報的標準差約 1.5–2 顆。在 commit 點用 deepcopy + rebind（0.34 s，§60 C 已驗證能正確接續）分出 K = 3 個下一顆，只模擬到下一跳結束，得到精確的反事實差值。這只在訓練時用模擬器，執行時不用，符合 #162/#165/#168。它比學一個 Q(s,b1,b2) 更直接：pair-Q 需要新 GNC 下的資料，也需要 7.5k 個 pair 的泛化。",
+     "expected_gain_pops": "0 到 +0.3（只在 B 的 PPO 學不動時才有增益）",
+     "confidence": "low",
+     "implementation_days": 2,
+     "warm_start": "完全沿用 PPO 和 B 的網路，只是多一個 advantage 來源",
+     "risks": "env 成本在 commit 決策上約 2–4 倍，整體吞吐量下降。§60 C 的搜尋老師只比 policy 多 1–2 顆，而且是在自己的 seed、帶模擬器特權的情況下，上限有限。實作比其他選項複雜。",
+     "one_day_experiment": "先不做。B 的 (a) 分支跑 +8 h 後，如果下一顆頭的熵和轉折角都沒動，再用 20 個 seed 離線量反事實差值的大小：不同下一顆選擇的下一跳時間差中位數 < 0.1 s，就連這個備案也放棄。"
+    }
+   ],
+   "evidence_from_repo": [
+    "dev/DECISION_LOG.md §26：當時已分析過 DQN 的問題：800 種組合而且可用集合一直在變（需要 branching DQN）、BC 不能直接沿用、ε-greedy 浪費燃料、現有權重用不上。建議改成離散 SAC 或 V-trace，並且留到 scenario 4 時再考慮",
+    "§29 / §32：batch 9,600 時丟棄率 16.7–20.6%；改成 19,200 後降到 0–1.3%，落後分布 (0/1/2/3/4) 約 20/210/70/2/0，因此決定『不加 V-trace』（門檻是 5%）",
+    "§88：s4cont 從 attcont@998,400 換到 scenario 4 訓練，2.3M 決策（約 3–4 h）就 +0.31 ± 0.09（192 seed 配對），表示 PPO 適應動力學改變很快；§107–108 的 bwind 4 在 +4 h 就 +0.12",
+    "runs/s4bw4/det_eval_*.txt（96 seed 確定性）：9.10 @11.29M → 9.29 @14.17M → 9.28 @15.15M → 9.25 @21.93M → 9.35 @24.35M；狀態表 384 seed：9.18 @13.4M → 9.23 @16.4M，§133 的 9.30 @25.4M，斜率約 0.01 顆 / M 決策",
+    "§109–110 SIL 11：+0.000 / +0.010；§113 LR 5e-5：+0.06（約 1 SE）；§133 γ 0.995：+0.044（< 2 SE）；§112 checkpoint 平均：無增益。四種學習器擾動都沒有效果",
+    "§60 B：critic 搜尋 search_k=3 讓 7.69 → 4.89；§103：DP 規劃的價值 J 與實際擊破相關 −0.008，連少數推翻都傷分（−1.20 ± 0.33）。對學到或手寫的價值取 argmax 選目標，在這個專案裡已經兩次失敗",
+    "dev/gnc2_diag/workflow_result.json（chaining / guidance）：policy 在打中前中位數 0.58 s 就換下一顆（45 顆中有 44 顆）；free 模式只改 GNC 的串接 +0.05 ± 0.20 / −0.05 ± 0.17（policy 第二選擇當下一顆）；約 2/3 的偏差來自序列（轉折角 46.7° vs 33.8°）；strict lead-out 80 → 88；用 min-reach-time 猜下一顆只猜對 32%、−2 顆；交棒 τ = 1.0 s 會崩（57 顆）",
+    "我這次的實測（scenario 4，s4bw4@25,670,400 + rl2_sl_25670400，用 async_ppo.act 抽樣共 10 局，擊破 10/8/9/9/10/10/9/10/9/10）：keep 決策目標熵中位數 1.6e-16 nats，top1−top2 logit 差 p10/p50/p90 = 16/40/58；換目標決策 n=71，差 1.6/8.1/39.7，17% 的 p_top < 0.9；抽樣 ≠ argmax 9/261；速度檔熵中位數 2.5e-5。scenario 1 的 data/teacher 觀測（2,256 個決策）也一樣：目標熵中位數 5.6e-9",
+    "dev/async_ppo.py:28：GAMMA 0.99、LAM 0.95、CLIP 0.1、ENT 0.003、LR 1e-4、EPOCHS 4，GAE 權重一跳（6 個決策）後 0.94^6 = 0.69、兩跳 0.48，下一顆的 credit 視窗已經涵蓋，n-step Q 沒有額外好處；:461 的 SIL 梯度 gap·∇logπ 在 p ≈ 1 時幾乎是 0",
+    "dev/rl3_net.py:54–58：已經有 phase masking（被遮住的部分 log-prob 為 0），下一顆頭可以直接沿用這個模式做 lead 視窗遮罩；dev/rl2_net.py:32 的 prior（現為 3.09）和 tgt head 可以按 1/T 縮放而 argmax 不變",
+    "dev/async.sbatch：learner 在 GPU 節點（--gres=gpu:1），所以提高 replay ratio 不是基礎設施的限制，是價值不夠；learner 不存完整 transition，DQN 的 offline 預訓練要先重新收資料",
+    "任務背景和 §130：前段班的 agent 名稱是『RL AGENT 100M STEP (PPO finetune lr 1e-4)』，他們也用 PPO，差距不在演算法；我們一天約 15–17M 決策，到 10/10 可以產生約 150M"
+   ]
+  },
+  {
+   "perspective": "動作介面與階層（action interface / hierarchy）。瓶頸（§132，已驗證）是每跳開始時到下一顆的理論最短時間：我們 2.35 s，前段班 1.72 s。這個差由兩件事決定：下一顆選誰，以及打中當下的速度。現行介面是每 0.5 s 選一顆加 4 檔速度，GNC 只看一顆（ZEM N=2，t_go = stretch × T1，沒有下一顆的項），根本表達不出「邊打這顆邊為下一顆塑形」。所以該動的是介面，不是優化器。演算法跟著介面走：離散指標或每跳低維設定值用 PPO 最合適（現有 async PPO、phase masking、高斯頭都已經有）。SAC 只在 20 Hz 連續殘差時算教科書式的選擇，但那個選項本身在時程內不划算。DQN 對指標加連續起飛姿態加 BC 起點都不合。",
+   "recommendation": "不要換成 SAC 或 DQN，要換的是動作介面。主線在 LR 減半（+0.06）、γ 0.995（+0.044）、SIL 門檻 11（0）、checkpoint 平均（0）上都卡在約 9.3，代表天花板來自介面或表示力，而不是樣本效率。介面不變的話，換 SAC 只是用另一種方法逼近同一個上限。前段班自己的 agent 名稱也寫明是 PPO。建議保留 async PPO + SIL，做計畫中的 (B) 雙目標，並加三個設計細節：(i)「下一顆」指標只在 t_go≈1 s 的觸發決策上抽樣（新增一個事件觸發決策），其他決策用跟起飛頭一樣的 phase masking 固定、log-prob 為 0，否則大多數抽樣沒有作用，只會稀釋梯度；(ii) GNC 做交棒保護（舊目標列為必中，用 chain_sim mode 2 的 blend）加 lead-out（剩餘推力朝下一顆，位移上限 δ，實際約等於前段班最後 0.8 s 那約 4 m/s² 的側向加速度）；(iii) 把「承諾的下一顆」當成 token 特徵（新欄位 0 初始化），讓 policy 自己學要不要守承諾，也就是軟性巨集動作，不做硬承諾。可選 (4b)：加一個 1~2 維的連續 lead 參數（PPO 高斯頭，沿用 attc 機制），但只有在 1 天 oracle 實驗顯示「依狀態調整」明顯勝過「固定最佳值」時才做。不做：20 Hz 殘差、端到端低階控制、硬承諾多腿巨集、明確的抵達方向選擇，理由是被 (1) 支配、已量到負面，或時程不夠。順序：先用約半天叢集跑不需訓練的 oracle-next 實驗，定出 lead-out 本身的上限，同時實作；再從 s4bw4@25,670,400 分叉重訓，用 384 seed 配對比較，並追蹤領先指標（每跳開始的 Tmin、轉折角）；平台期 checkpoint 留作資格賽保底，10/8 前定案。預期 +0.3~0.8 顆/局（中心 +0.5，兩局加總約 +1），信心低到中。這個增益遠小於 seed 之間的標準差（約 1.5~2 顆/局），而且完全押在重訓：沒有重訓時，自由模式下所有串接變體都約等於 0。",
+   "options": [
+    {
+     "name": "(1) 計畫中的雙目標動作：target + 遮罩的 next 指標（只在 t_go≈1 s 的觸發決策抽樣）+ GNC 交棒保護 + lead-out + 軟承諾特徵",
+     "mechanism_vs_bottleneck": "直接對準瓶頸的兩半。(a) 抵達塑形：最後約 1 s 用剩餘推力朝下一顆。lead10 的上限是 k ≤ 2δ/t_go²，δ 取 0.7 m 時在最後 0.8 s 約 1.4~5.6 m/s²，正好落在前段班約 4 m/s² 的側向加速度（驗證者指出該學的是這個加速度，不是「遠側 1.1 m」的幾何）。(b) 選序：只有當 GNC 會為下一顆塑形，「轉折角小的序列」才真的變值錢，PPO 才有理由把 47~54° 往 34° 拉。現況是 policy 在打中前約 0.58 s 盲切換：45 顆裡 44 顆是切走目標後靠慣性打中的，而且切換時機被 DECIDE=50（0.5 s）的決策粒度量化住。雙目標可以讓塑形提早到約 1 s，同時保證這顆仍然打中。演算法：PPO（兩個離散指標加遮罩，log-prob 相加，現有 async 架構直接支援）。SAC-discrete 或 DQN 沒有好處：沒辦法沿用 V、現有 policy 權重和 BC。",
+     "expected_gain_pops": "+0.3~+0.8 顆/局（中心 +0.5；兩局加總約 +1）。換算方式：s4 每跳約 3.0 s、燃燒內約 8 跳，每省 0.1 s/跳約 +0.27 顆。組成：交棒之後剩下的抵達狀態差距上限約 0.26 s/跳（約 +0.7）；s4 自由模式 GNC 交棒 8 seed 從 2.99 降到 2.91 s/跳（約 +0.2，樣本小）；lead10 在 strict 燃燒內只有 +5/144，而且是在沒有交棒、本來就被低估的基準上；選序的改善要重訓才看得到（轉折角能解釋 33~63% 的偏差，驗證者標為 UNCERTAIN）。",
+     "confidence": "low",
+     "implementation_days": 2,
+     "warm_start": "可以。next 頭從 tgt 頭複製（遮掉已選的目標），pair 特徵（從選定目標抵達點到候選的 reach time、轉折角）欄位 0 初始化；「承諾的下一顆」token 特徵也 0 初始化。lead 關閉時，要求每步動作的 SHA1 與 s4bw4@25,670,400 相同（照 §102 M0 的做法）。SL 維持 attcont@998,400 凍結。重訓預估：前幾小時掉 0~0.3（§83 換 GNC 後 8.40 掉到 8.09）；約 5M 決策（全叢集約 6~10 h）回到基準；要到 +12~24 h 才能判斷；總計 2~4 天。",
+     "risks": "(1) 信用分配很弱：next 只影響最後約 1 s，所以一定要 phase-mask，只在觸發決策抽樣；另外可以用 search_teacher 的 deepcopy+rebind 在訓練時分岔，算出低變異的 per-hop 優勢（只在訓練時用模擬器）。(2) s4 的 GNSS 雜訊 2 m 大於氣球半徑 1.5 m，會吃掉 δ 的命中餘裕，δ 要在 s4 掃過。(3) 抵達狀態改變後，凍結的 SL 的 t_hat/p_hat 和 t2 特徵會偏移（但 §87/§104 顯示重訓 SL 都傷分）。(4) 未訓練的版本在自由模式都約等於 0（+0.05 ± 0.20、−0.05 ± 0.17），增益完全押在重訓。(5) 時程：實作 2 天 + 重訓 3~4 天 + 挑 checkpoint 1~2 天，剛好塞得進 10/8；失敗就用平台期 checkpoint。(6) 資格賽參數可能不同（#168）；最大的穩健性弱點「氣球散佈 ×2 → 6.55」（§117）不會因為任何介面改動而改善。",
+     "one_day_experiment": "不需訓練的 oracle-next 測試：scenario 4，192 個沒用過的 seed，配對比較。第一遍用 s4bw4@25,670,400 照常飛，記下 policy 自己的擊破順序。第二遍同一 seed，policy 照常選目標，但 GNC 拿「記錄順序中下一顆還活著的」當 next，也可以用 deepcopy+rebind 在每跳分岔，取得精確的 policy 下一個選擇。變體：base / 只有交棒保護 / 交棒 + lead10 / 交棒 + lead05 / δ 0.4、1.0，沿用 dev/gnc2_diag/thrust_util/sim_lead.py 和 hop_geometry/chain_sim.py mode 2。量測：顆數、每跳開始 Tmin 中位數（現為 2.35 s）、對準角。叢集約 2~4 h。判準：交棒 + lead 的 oracle 增益 ≥ +0.25（約 3 SE）就立刻分叉重訓；若 < +0.15 且 Tmin 沒降 ≥ 0.1 s，表示 lead-out 本身沒有空間，雙目標只剩選序可指望，重訓仍可做但降低優先，+12 h 時 Tmin 和轉折角沒動就停。"
+    },
+    {
+     "name": "(4b) 階層式：每跳一個學出來的抵達設定值（1~2 維連續：T_lead、δ 或側向加速度上限），在觸發決策輸出，由 GNC 執行",
+     "mechanism_vs_bottleneck": "疊在 (1) 之上，讓 policy 依狀態決定 lead-out「多用力、多早開始」（例如 next 偏很多時多拉，快燒完時保守）。每跳只有一個參數、在 t_go≈1 s 時決定，信用分配比 20 Hz 殘差好約兩個數量級；GNC 仍保留 lag_comp、bwind 4 和命中保證，所以在 s4 下穩健。演算法：PPO 高斯頭，直接沿用 rl3_net.py 的 attc 和 async_ppo.act 的高斯 log-prob。不需要 SAC。",
+     "expected_gain_pops": "在 (1) 之上再 +0~+0.3 顆/局",
+     "confidence": "low",
+     "implementation_days": 1,
+     "warm_start": "可以。均值初始化成 lead10（T 1.0 s、δ 0.7 m）或 oracle 實驗得到的固定最佳值，std 設小；起點與固定規則完全相同。",
+     "risks": "如果最佳值幾乎不隨狀態變，多這個頭只會多雜訊。高斯探索抽到大 δ 時會掉命中，必須夾上限。另外是與 (1) 同時上線造成的歸因混淆。",
+     "one_day_experiment": "跟 (1) 的 oracle 實驗同一批：6 組 (T_lead, δ) × 192 seed，比較「每局最佳設定」與「全體固定最佳」。另外加 6 組幾乎相同的 placebo 設定（例如 δ 0.700 和 0.701），用來估計混沌造成的 best-of-k 膨脹，扣掉後差距仍 < 0.2 顆，就把固定最佳值寫死在 GNC，不做這個頭。"
+    },
+    {
+     "name": "(2) 連續殘差 / lead 指令，10~20 Hz 加在 GNC 指令上",
+     "mechanism_vs_bottleneck": "理論上最能表達前段班的側向加速度和速度剖面，但殘差仍需要知道下一顆才有參考方向，所以本質上是 (1) 的超集合。演算法：這是 SAC 教科書式的場景（連續、off-policy），但混合動作（離散指標 + 連續）要用 hybrid SAC，Q(s,a) 評論家得從零訓練，也不能沿用現有的 V 和 BC；改用 PPO 高斯頭可以沿用 attc。真正的問題是信用分配，不是演算法：20 Hz 白雜訊探索大半會被姿態內迴路（頻寬約 5.4 1/s）濾掉，每步對跳躍時間的影響只有毫秒級；一集決策數會從約 90 變成約 600，γ 要改成每步 0.99^0.1，value 頭也要重新校準。",
+     "expected_gain_pops": "天花板約 +1 顆（跟 (1)+(4b) 爭的是同一塊 0.26~0.63 s/跳），但在 11 天內的期望約等於 0（−0.5~+0.5）",
+     "confidence": "low",
+     "implementation_days": 4,
+     "warm_start": "部分可以：主幹和指標頭可沿用，殘差頭均值 0 初始化，起點行為相同。但步長、γ、GAE、value 尺度全部改變，等於要重新調 PPO；每局的 learner 記憶體也是 5~10 倍。",
+     "risks": "殘差可能打破命中保證，要加安全夾（預測最接近距離 < 1.0 m 才允許殘差）。20 Hz 直接吃雜訊狀態，在 s4 的 GNSS/IMU 雜訊下可能學成追雜訊；資格賽參數若改變會更脆弱。時程：實作 3~4 天 + 訓練 3~5 天，完全沒有緩衝。",
+     "one_day_experiment": "oracle 殘差上限：用 deepcopy+rebind 在每跳最後約 1 s 分岔 k 種固定加速度剖面（朝 oracle next 0/2/4/6 m/s²、沿速度 ±），每跳取最佳，和「固定最佳 lead」比較顆數（192 seed，扣掉 placebo 的混沌膨脹）。差距 < +0.3 顆，就表示 20 Hz 殘差沒有超出 (1)/(4b) 的空間，不做。"
+    },
+    {
+     "name": "(3) 端到端低階控制（TVC/油門，像 \"RL AGENT 100M STEP\"）",
+     "mechanism_vs_bottleneck": "與瓶頸錯位。§132 已經量到我們的低階執行和前段班一樣：推力利用率 0.91 vs 0.92，每跳執行額外時間 0.54 vs 0.57 s，姿態迴路離最佳 ≤ 0.04 s/跳。而且模擬器的擺角只產生力矩、推力方向就是機頭軸，沒有「更聰明的擺角」可以省時間。端到端唯一可能的收益是隱式學到抵達塑形和選序，而 (1)/(4b) 用小三個數量級的動作維度就能表達。演算法：他們自己用的就是 PPO；SAC 也能用，但沒有證據更好。",
+     "expected_gain_pops": "11 天內 −3~0（很可能到 10/8 都還追不上 9.3）",
+     "confidence": "high",
+     "implementation_days": 8,
+     "warm_start": "幾乎不行：只能先 BC 模仿我們 GNC 的 100 Hz 指令（BC 的上限就是 GNC），再用 PPO 探索。lag_comp（模型誤差 1.1e-16）、bwind 4、SL 這些工程成果都得重新學一遍。",
+     "risks": "算力其實不是瓶頸：如果「100M step」指 100 Hz 的環境步，大約是 2~3 萬局，以我們 s4 叢集約 1.5~3 局/s 的速度幾小時就跑得完。真正的瓶頸是要從零學會帶 0.064 s 擺角延遲、只產生力矩的 TVC 姿態穩定，加上雜訊濾波和陣風，還要贏過一個已經共適應、執行面已達前段班水準的系統。也沒有證據顯示端到端更能一般化：Taoyuan 在沒挑的 seed（scenario 1）只有 13/11/9/8，跟我們 8.6~10 同一級，18~20 是挑 seed 加針對 seed 微調的結果。",
+     "one_day_experiment": "不建議花叢集時間，紙上檢查（上面的數字）已經足以否決。如果一定要試：用 500 局 s4 的 GNC 資料 BC 一個 20 Hz MLP 控制器，閉迴路飛 96 seed；1 天內沒辦法在 1 顆以內追上 GNC 就停（預期會停）。"
+    },
+    {
+     "name": "(4a) 選項式 RL：目標序列當硬巨集動作（一次承諾 2~3 顆，GNC 規劃多腿路線）",
+     "mechanism_vs_bottleneck": "方向對準選序，但把執行交給手寫的多腿規劃，而這正是已經失敗過的路：物理 DP 選目標比 policy 差 1.2~4.5 顆（§103，連很少推翻都 −1.2），規劃價值與實際擊破數的相關只有 −0.008；ZEM/ZEV 終端速度約束在 strict 只有 55/61 顆，基準是 63。硬承諾也拿掉了 policy 每 0.5 s 修正的能力，而那正是它的強項。演算法：PPO（自回歸指標）。軟承諾版（把「承諾的下一顆」當特徵）已經併入 (1)。",
+     "expected_gain_pops": "硬承諾版 −1~0；軟承諾版見 (1)",
+     "confidence": "medium",
+     "implementation_days": 3,
+     "warm_start": "指標頭可以沿用；多腿導引是新程式，policy 要重新共適應。",
+     "risks": "重蹈 §102~103 的覆轍；多腿 GNC 在 s4 雜訊和陣風下更難驗證。",
+     "one_day_experiment": "不需要新實驗，§102~103 和 ZEM/ZEV 的結果已經否決；軟承諾的效果在 (1) 的重訓中看。"
+    },
+    {
+     "name": "(5) 讓 policy 明確選抵達方向（離散：無 / 朝下一顆 / 遠側偏置 / 上下左右）",
+     "mechanism_vs_bottleneck": "沒有下一顆就沒有參考方向；有下一顆時，唯一有用的方向就是「朝下一顆」，也就是 (1)。已經量過的結果：擦邊瞄準 tolc=1 得 81 vs 80（等於沒差）；ZEM/ZEV 終端速度約束 −8/−2；驗證者也指出前段班的「1.1 m 遠側」只是朝下一顆側向加速度的外插假象，不是可以拿來瞄的幾何。演算法：PPO 離散頭。",
+     "expected_gain_pops": "約 0（被 (1) 支配）",
+     "confidence": "medium",
+     "implementation_days": 1,
+     "warm_start": "可以（0 初始化，偏好「無」）",
+     "risks": "白花 1~2 天；遠側瞄準在 s4 雜訊下會吃命中餘裕。",
+     "one_day_experiment": "在 (1) 的 oracle 批次多加「遠側偏置 0.5 / 1.0 m」兩組；預期不如交棒 + lead，確認後就放棄。"
+    },
+    {
+     "name": "（對照）介面不變，只換演算法：SAC-discrete / DQN / V-trace",
+     "mechanism_vs_bottleneck": "完全沒有碰到瓶頸。現行動作空間本身表達不出抵達塑形，換優化器只是用另一種方法逼近同一個 9.3。平台期不是樣本效率造成的：LR 減半 +0.06（約 1 SE）、γ 0.995 +0.044（< 2 SE）、SIL 11 為 0、checkpoint 平均為 0。§26 早就指出 DQN 沒辦法沿用 BC 和現有權重、可用動作集合一直在變。",
+     "expected_gain_pops": "約 0（−0.5~+0.2；換 learner 的初期會掉）",
+     "confidence": "medium",
+     "implementation_days": 5,
+     "warm_start": "SAC/DQN 不行：Q 評論家要從零開始，現有 V 和 policy logits 都不能當 Q。V-trace 可以沿用現有網路，但 PPO clip 加 MAX_LAG=2 已經處理掉非同步的延遲。",
+     "risks": "要吃掉 4~6 天的實作和調參，排擠掉唯一對準瓶頸的 (1)。",
+     "one_day_experiment": "不需要：γ、LR、SIL 三組 384 seed 的配對 A/B 已經顯示優化器參數不是瓶頸。"
+    }
+   ],
+   "evidence_from_repo": [
+    "dev/DECISION_LOG.md:1589-1591 (§132)：自由模式下每跳執行額外時間 0.54 vs 0.57 s；差距全在每跳開始時的 Tmin 2.35 vs 1.72 s；轉折角 34° vs 47~54°；最後約 0.8 s 有約 4 m/s² 朝下一顆的側向加速度；policy 不變時所有 GNC 串接變體約 0；用 policy 第二選擇 + blend −0.05 ± 0.17；ZEM/ZEV −8/−2；lead10 在 strict 80 → 88",
+    "dev/gnc2_diag/workflow_result.json（chaining verdict 第 9 條）：會交棒的老師讓 strict 80 → 96；lead10 的 88 顆裡燃燒內只有 85（+5 在燃燒內、+3 在燃燒後），而且是在沒有交棒的基準上量的",
+    "dev/gnc2_diag/workflow_result.json（chaining 第 11 條）：自由模式 45 顆中有 44 顆是切走目標後打中的，切換在打中前中位數 0.58 s（IQR 0.44~0.70）→ 切換時機被 0.5 s 的決策粒度量化",
+    "dev/gnc2_diag/workflow_result.json（chaining 第 13 條 UNCERTAIN）：偏差中來自選序的比例是 33~63%，其餘來自抵達；第 6 條：該學的是約 4 m/s² 的側向加速度，不是「遠側 1.1 m」的瞄準幾何",
+    "dev/gnc2_diag/workflow_result.json（guidance）：s4 自由模式 8 seed 的 GNC 交棒 ho=0.5 讓 73 → 74 顆、每跳 2.99 → 2.91 s；stretch 1.3 是粗糙的抵達塑形（下一跳 T0 2.27 vs 2.80，但這一跳多花約 0.6 s）",
+    "dev/gnc2_diag/workflow_result.json（attitude）：TVC 擺角只產生力矩、推力沿機頭軸；換最佳控制律只省 ≤ 0.014 s/跳；角加速度提高 3.4 倍在 strict 也只有 80 → 87 → 端到端控制沒有執行面的空間",
+    "BalloonPoppingGymEnv/agents/rl2_agent.py:22-23：STRETCH=(0.6,0.8,1.0,1.3)、DECIDE=50（100 Hz 下是 0.5 s）；rl2_agent.py:90 needs_decision 只在擊破時或每 0.5 s 決策一次",
+    "BalloonPoppingGymEnv/agents/gnc_agent.py：_guidance（約 369 行）是單目標 ZEM，t_go = stretch × T1，沒有下一顆的項；_spend_excess（約 415 行，excess_dir 預設 0）就是 lead-out 要接上的地方",
+    "dev/rl3_net.py:30-35 與 dev/async_ppo.py:79：已有連續高斯頭（attc）和 phase masking（pre-launch 的固定部分 log-prob 為 0）→ 遮罩的 next 指標和 (4b) 的設定值在 PPO 下接線成本很低",
+    "dev/async_ppo.py:27：SEG=64、MAX_LAG=2，非同步延遲靠 PPO ratio + clip 處理 → 用不到 off-policy 演算法",
+    "dev/DECISION_LOG.md:235-241 (§26)：DQN 的問題是動作組合多且可用集合一直變、BC 和現有權重用不上；當時的結論是只有需要樣本效率時才考慮離散 SAC 或 V-trace",
+    "dev/DECISION_LOG.md:1297-1327 (§102-103)：DP 規劃 5.20 vs policy 9.27；連很少推翻的錨定都 −1.20 ± 0.33；規劃價值 J 與擊破數相關 −0.008 → 手寫多腿選序失敗",
+    "dev/DECISION_LOG.md:542 (§60 B)：critic search 7.69 → 4.89",
+    "dev/DECISION_LOG.md §109 / §113 / §133：SIL 11 沒有差別；LR 減半 +0.06（約 1 SE）；γ 0.995 +0.044（< 2 SE）→ 平台期不是優化器或樣本效率造成的",
+    "dev/DECISION_LOG.md §80（約 1040-1057 行）：lag_comp 的模型誤差 1.1e-16；s4 每局 reset 100~140 s 是主要成本；陣風的損失幾乎全部來自氣球軌跡難預測（bwind 已處理大半）",
+    "dev/DECISION_LOG.md §83：換 GNC 之後 s4cont 從 8.40 掉到 8.09（共適應的代價，重訓初期預期會掉）",
+    "dev/DECISION_LOG.md §130：Taoyuan 的 agent 是 PPO（\"RL AGENT 100M STEP (PPO finetune lr 1e-4)\"），在沒挑的 seed 只有 13/11/9/8；scenario 2/3 別隊挑 seed 的單局最高分是 12/10",
+    "dev/DECISION_LOG.md §117：最大的穩健性弱點是氣球經緯度散佈 ×2 → 6.55（−2.76），任何動作介面改動都處理不了這一塊",
+    "dev/DECISION_LOG.md §93：384 seed 配對的 SE 約 0.07 → 可分辨的最小差距約 0.14~0.2 顆"
+   ]
+  },
+  {
+   "perspective": "搜尋／規劃／model-based RL（MCTS、AlphaZero、MuZero、2–4 顆序列搜尋、CEM/MPC、ES/CMA-ES、expert iteration）。結論：以主線來說，這一類方法在 11 天內都贏不了 plan B。唯一值得加的是模型化控制，而且只用在模型夠準的地方：B 內部 ≤2.5 s 的連續抵達塑形。量化依據：(1) 瓶頸拆成兩塊。一塊是打中時的抵達速度：同一對氣球把我們的速度換成他們的，T0 從 2.64 降到 1.98 s，約 0.6 s/跳，但這是樂觀上限；交棒之後保守估是 Tmin 1.94 vs 1.68，約 0.26 s/跳。另一塊是下一顆選誰：bend 我們 47–54°、他們 34°；free 模式的不對齊約 2/3 來自選序，但其中一部分是前段班知道 seed 才做得到的最佳化，一般化的 agent 拿不到。(2) 敏感度：pops ≈ 1 + (燃燒可用時間 − 第一顆時間)/每跳 ≈ 1 + 24.3/2.9 ≈ 9.4，跟實測 9.3 吻合，所以每跳快 0.1 s 約多 0.29 顆。(3) 模型的準度只在短時域成立：火箭點質量 `_fly` 燃燒中 3 s 內誤差 0.5–0.7 m（§75），氣球用 bwind 4 在 3 s 誤差 0.18 m、6 s 0.96 m（§97），燃燒結束後點質量模型就失效。長時域的離散選擇則是 co-adapted policy 贏過所有模型成本：DP −4、錨定 −1.2、search_k −2.8。(4) 連完美模型都有限：用真模擬器 beam search 的老師只比 policy 多 +0.84（s1），而且蒸餾回 policy 幾乎沒效果（一致率 93.1→95.1%，保留集沒動）。(5) 600 s 預算不是限制：官方評估一局 52 s（reset 39 s + 飛行 13 s），scenario 4 在負載下 reset 最多約 100 s，剩約 480 s，分給約 100 次決策，理論上每次決策有約 4.8 s。真正的限制是模型準度、co-adaptation、叢集只有一個（任何搜尋老師用的核心都要從 B 的 retrain 扣），以及時程：B 實作 1–2 天、retrain 3–5 天、用 ≥768 seed 挑 checkpoint 1–2 天。需要第二次 retrain 的東西都排不進去。",
+   "recommendation": "不換：不換 SAC/DQN，也不改用 MCTS/MuZero/DP 當主線。主線維持 PPO + A（燃燒結束模式）+ B（policy 多選下一顆 + GNC 最後約 1 s 朝它），從 s4bw4@25,670,400 做一次 retrain。這一類方法裡只加一件在關鍵路徑上的事：B 的 GNC 半部從固定的「最後 1 s 把剩餘推力朝下一顆」（lead10）改成命中約束的短時域 MPC。做法是每 0.1 s 用現有的向量化 `_fly` 加 bwind 4 氣球預測，評估約 50–100 組推力程序（朝 B 的 blend λ × 開始塑形的時間 × 繞到氣球遠側的偏移），在 A 的預測 miss ≤ r_ok 的條件下，最小化 t_hit(A) + T_min(B)。前提是 retrain 開跑前用一天 benchmark（s1 strict + 新的 s4 own-order）證明它贏 lead10 至少 3%，而且 s4 的打空不增加；沒贏就直接用 heuristic 開跑，不要拖延 B。這跟 §102–103 失敗的 DP 不同：時域 ≤2.5 s，誤差小於氣球半徑；離散的目標選擇仍由 policy 做；A 有硬性命中約束；policy 會在它上面重新訓練。另外，用閒置核心或本機跑一次 s4 搜尋老師 headroom 診斷（約 50 core-h，不佔 B 的 worker），用來判斷序列層級的搜尋/ExIt 有沒有空間。預設預期是沒有（< +0.5）；就算有，也只能在 B 收斂後用剩下的天數小量試。run-time MCTS/lookahead、MuZero、AlphaZero、CMA-ES 調 policy 權重，這 11 天內都不做。",
+   "options": [
+    {
+     "name": "B 的 GNC 半部改成命中約束的短時域 MPC（CEM/網格搜尋抵達塑形）",
+     "mechanism_vs_bottleneck": "直接打抵達速度那一塊。A 與下一顆 B 都已選定時，每 0.1 s 對約 50–100 個候選做閉迴路點質量 rollout（沿用 `_fly`：姿態角速度與油門速率限制、阻力、lag_comp；氣球用 bwind 4），在 A 的預測 miss ≤ r_ok 的條件下最小化 t_hit(A)+T_min(B|抵達狀態)。候選 = blend λ（0–1，朝 B 的最短時間方向）× 開始塑形的時間 0.4–1.2 s × 遠側偏移 0–1.2 m。heuristic lead10 在 strict 模式是 80→88，但它做不出前段班的打法：擊破前 0.8 s 在氣球遠側 1.1 m，再彎進去穿過氣球。chain_sim mode 2 的命中約束 blend 在 strict 是 +16。跟 DP 不同：時域短，而且模型在這個時域內準（3 s 火箭 0.5–0.7 m、氣球 0.18 m）。",
+     "expected_gain_pops": "比 heuristic B 多 +0.1～+0.4（s4）；B+MPC 相對現在合計 +0.4～+1.0。上限：保守 0.26 s/跳 ≈ +0.75，樂觀 0.6 s/跳 ≈ +1.7",
+     "confidence": "medium",
+     "implementation_days": 1.5,
+     "warm_start": "跟 B 相同：s4bw4@25,670,400，next head 零初始化；只改 GNC，預期短暫下跌後回升（bwind 4、margin 0、lag_comp 都是這樣改 GNC 再重訓成功的）",
+     "risks": "s4 雜訊下命中餘裕有斷崖：交棒 τ=1.0 時 strict 崩到 57 顆、67% 打空，而 r_ok 1.0 m 沒在 s4 驗過，要掃 0.7–1.2；跟 B 綁在同一個 branch 無法歸因，建議兩個 branch 照 §93 協定 A/B；每步計算要用固定迭代數（約 ≤15 ms，確定性），不要用時間保護（DP 的 40 ms 保護觸發約 0.9%，結果不可重現）",
+     "one_day_experiment": "建 s4 own-order 基準：記錄現行 policy 在 192 個新 s4 seed 的目標序列，用會交棒、事先知道下一顆的 teacher 重飛；另外跑 s1 strict（交棒基準 96/144）。變體：base、lead10（計畫中的 B）、MPC-λ、MPC-λ+遠側偏移，r_ok ∈ {0.8, 1.0, 1.2}。用 gnc2_bench.sbatch array，100 核約 2–4 h。s4 own-order 比 lead10 多 ≥3% 顆、打空率不增加、每跳中位數降 ≥0.1 s → 採用進 B 的 retrain；否則用 heuristic 開跑"
+    },
+    {
+     "name": "s4 搜尋老師 headroom 診斷，headroom 大才做 expert iteration",
+     "mechanism_vs_bottleneck": "量選序那一塊中不靠 seed 知識能拿到多少。訓練時在真模擬器的每跳起點，對 policy 的 top-k 目標做 beam search，之後照 policy 飛。老師贏 policy 的量，就是現有介面下所有序列搜尋/ExIt/MCTS 的天花板。如果老師路線的 T0 與 bend 不比 policy 小，代表搜尋根本沒打到瓶頸",
+     "expected_gain_pops": "診斷本身 0；B 之後做 ExIt，到 10/10 約 +0.0～+0.4（s1 老師 +0.84，但當時約 341 集老師示範的蒸餾：一致率 93.1→95.1%、保留集沒動）",
+     "confidence": "low",
+     "implementation_days": 0.5,
+     "warm_start": "async_ppo.py 已有老師緩衝區（demos_in，SIL 每批一半取老師），learner 不用改；ExIt 需要把老師改成也搜 next head，約 +1.5 天，再加 ≥2 天叢集時間",
+     "risks": "s4 雜訊下老師會挑到運氣好的分支，蒸餾到的是雜訊；血統與合規：主辦方已問過搜尋老師的血統（§116、§127）；會跟 B 的 retrain 搶叢集；deepcopy/RK45 rebind 很脆弱（§60 的 closure bug）",
+     "one_day_experiment": "192 個新 s4 seed，s4bw4@25,670,400，BEAM 4、TOPK 4、SPEEDS 2，每 seed 約 10–15 min，共約 40–50 core-h（本機 24 核過夜或閒置節點）。報告配對的老師−policy 顆數，以及老師路線 vs policy 的每跳起點 T0、bend 角。配對增益 < +0.5，或 T0 沒有低 ≥0.15 s → 砍掉 ExIt 與所有序列搜尋"
+    },
+    {
+     "name": "把模型算出的配對特徵給 B 的 next head（把規劃當特徵，§103 自己的結論）",
+     "mechanism_vs_bottleneck": "打選序那一塊。現在的 t2 token 特徵只是「對所有下一顆取最小值」，而且用等力的抵達速度，policy 看不出哪一個 next 跟哪一個 target 搭，也看不到 GNC 實際的抵達狀態。新增：對 policy top-8 target × top-8 next，用閉迴路模型預測 t_hit(A)、bend 角、T_min(B|預測抵達狀態)，當配對輸入接到自迴歸的 next head（bilinear h_A·W·h_B + 配對 MLP），零初始化，讓 PPO 自己決定要信多少",
+     "expected_gain_pops": "在 B 之上 +0.0～+0.3",
+     "confidence": "low",
+     "implementation_days": 1,
+     "warm_start": "新權重零初始化，第 0 步行為位元相同（跟 ATT/attc head 同樣的做法）",
+     "risks": "每次決策多 5–20 ms；跟 B 綁在一起無法歸因；過去改特徵或 SL 曾造成退步（§87、§104）",
+     "one_day_experiment": "離線用已記錄的 s4 跳（data/gnc2 + t1data）：比較模型配對 T0 與 t2 對實際下一跳時間的 R²，並算 regret（policy top-3 裡有另一個 next 的預測兩跳時間短 ≥0.3 s 的跳佔幾成）。ΔR² < 0.05 或 regret < 15% 的跳 → 砍。本機 CPU，<1 天"
+    },
+    {
+     "name": "run-time lookahead 搜尋（MCTS / 2–4 顆 beam），用自己的點質量模型 + policy 先驗",
+     "mechanism_vs_bottleneck": "想打選序那一塊：用閉迴路模型 rollout 重排 policy 的 top-k (A,B[,C])。但它在執行時推翻 co-adapted policy，歷史上每次都輸",
+     "expected_gain_pops": "不重訓約 −0.3 ± 0.5（search_k 7.69→4.89；純 DP 5.2 vs 9.27；很少推翻的錨定版仍 −1.2；J 與顆數相關 −0.008；推翻目標 −0.55～−1.5）",
+     "confidence": "high",
+     "implementation_days": 3.5,
+     "warm_start": "不適用（執行時的附加元件）；要重訓的話就等於第 3 個選項",
+     "risks": "推翻後落在 policy 沒訓練過的狀態；重規劃抖動；燃燒結束後模型失效（§75，熄火後 0.8 s 就偏 4.5 m）；計算預算安全（約 480 s 可用），但要固定迭代數才能確定性",
+     "one_day_experiment": "不建議花這一天。真的要做只跑影子模式：96 seed 記錄模型首選 vs policy，看模型預測的優勢與實際結果的相關，< 0.2 就砍"
+    },
+    {
+     "name": "MuZero / AlphaZero 訓練、ES/CMA-ES 調 policy 權重、換 SAC/DQN",
+     "mechanism_vs_bottleneck": "都只改最佳化器或樣本效率，不改抵達狀態的介面。主線 25M 決策的平台期（SIL、學習率、γ、權重平均在 384 seed 測試都沒增益），是介面天花板（policy 盲切，GNC 不看下一顆，§132），不是樣本效率。AlphaZero 產資料的成本：每次決策 16 次 simulation × 每次模擬 0.5–3 s，約 10–50 s wall，PPO 全叢集約 200 決策/s，資料少 100–1000 倍；MuZero 要新的 dynamics、reanalyse、隨機性，≥10 天。CMA-ES：108k 權重不可行；凍結 policy 調約 5 個 GNC 參數會被 co-adaptation 誤導（每次掃描都變差，§83、§131），而且每個候選要約 384 seed × 52 s ≈ 5.5 core-h 才有 0.1 顆的解析度",
+     "expected_gain_pops": "到 10/10 為 0",
+     "confidence": "high",
+     "implementation_days": 10,
+     "warm_start": "MuZero/AlphaZero 大多無法沿用；SAC 離散版可以沿用主幹，但對瓶頸沒幫助",
+     "risks": "賭掉資格賽時程；解決的不是瓶頸",
+     "one_day_experiment": "不值得跑。如果想要 ES 的效果，改把 lead 強度做成 policy 的小型離散動作（跟速度檔一樣），讓 PPO 自己 co-adapt"
+    }
+   ],
+   "evidence_from_repo": [
+    "DECISION_LOG §132 (lines 1582-1595): 每跳執行開銷 0.54 vs 0.57 s，差距全在每跳起點的最短時間 2.35 vs 1.72 s；bend 約 34° vs 47–54°；只改 GNC（policy 不變）的串接變體在 free 模式約 0；推翻 policy 目標 −0.55～−1.5；strict 下 lead10 80→88",
+    "dev/gnc2_diag/workflow_result.json key 'chaining' fix #3: 交棒之後的上限 Tmin 1.94 vs 1.68 s ≈ 0.26 s/跳 ≈ 每局 +1 顆（s1）；free 模式不對齊約 2/3 來自 policy 的選序",
+    "dev/gnc2_diag/workflow_result.json key 'guidance' (verifier): 同一對氣球把速度換成他們的，T0 2.64→1.98（他們自己 2.01），0.6–0.7 s/跳是樂觀上限；交棒 τ=1.0 崩到 57 顆、67% 打空（有斷崖）",
+    "dev/gnc2_diag/thrust_util/sims_free_eval.txt: free 模式 lead10 103 vs 基準 105 顆（不重訓約 0），每跳中位數 2.58→2.53",
+    "DECISION_LOG §102-§103 (lines 1297-1327): DP 純規劃 5.20 vs policy 9.27；錨定且很少推翻（門檻 2.0/3.0）仍 −1.20；J 與顆數相關 −0.008；等力模型每條腿中位數 4 s（policy 用 0.6–0.8×t_go）；§103 結論：再做規劃就應該當成 policy 的特徵",
+    "DECISION_LOG §60 B (line 542): search_k=3 讓 7.69→4.89，原因是 critic 被拿去評估想像中的狀態",
+    "DECISION_LOG §63 (line 599): 真模擬器搜尋老師 +0.84 顆（113 seed，70 個 ≥+1），但 policy 一致率只 93.1→95.1%，保留集沒動",
+    "DECISION_LOG §75 (line 887): 燃燒中點質量 `_fly` 預測 3 s 內 0.5–0.7 m，熄火後點質量模型失效",
+    "DECISION_LOG §97 table: bwind 4 氣球預測誤差 1/2/3/4/6 s = 0.01/0.07/0.18/0.36/0.96 m",
+    "DECISION_LOG §106 (line 1348): 官方評估一局 52 s（氣球 Monte Carlo 39 s + 飛行 13 s），離 600 s 很遠；§100: s4 reset 在負載下可到 100 s 以上",
+    "DECISION_LOG §116/§127: 主辦方已追問搜尋老師（模擬器分岔）示範進入血統的事；資格賽 agent 的血統同樣含老師",
+    "DECISION_LOG §26 (lines 235-241): 之前的 PPO vs DQN 分析（動作組合會變、BC/權重無法沿用、ε-greedy 浪費燃料）",
+    "BalloonPoppingGymEnv/agents/rl2_agent.py ~lines 124-131: t2 特徵 = 以等力抵達速度計算、對所有下一顆取最小值的到達時間，沒有配對資訊",
+    "BalloonPoppingGymEnv/agents/gnc_agent.py line 306 `_fly`（向量化點質量、姿態角速度與油門速率限制）；lines 96-101 已有 eob 模式（plan A）→ MPC 的零件已經在",
+    "dev/async_ppo.py lines 312-327, 406-413: 已有老師示範緩衝區（demos_in，SIL 每批一半）→ ExIt 不用改 learner",
+    "dev/search_teacher.py: 真模擬器 beam search 老師（BEAM/TOPK/SPEEDS），§63 記錄 s1 約 8.6 min/seed"
+   ]
+  }
+ ],
+ "synth": {
+  "verdict_on_switching": "不要換。10/10 之前不換 SAC（離散或連續 / hybrid）、DQN、Rainbow、MuZero，也不換成任何其他優化器。理由都對到 §132 量到的瓶頸，也就是每跳開始時到下一顆的理論最短時間 Tmin：我們 2.35 s，前段班 1.72 s，差在打中當下的速度方向加上下一顆選誰。\n\n(1) 現在的動作介面表達不出抵達塑形。GNC 在 policy 盲切換之前完全不看下一顆，換一個優化器也逼近不到這一塊。\n(2) 樣本不是限制：\n- 主線已跑 25M 決策。LR 減半 +0.06、γ 0.995 +0.044、SIL 11 為 0、checkpoint 平均為 0，都在 2 SE 以內。\n- PPO 適應新動力學只要 2.5–5M 決策（s4cont：7.25 → 9.05 @5.3M）。\n- 全叢集一天約 25–30M 決策（checkpoint 時間戳推算：約半個叢集時 0.55–0.64M/h）。\n- SAC/DQN 的核心賣點是樣本效率，這裡用不上。\n(3) SAC 或 DQN 的 actor 等於對 Q 取 softmax 或 argmax。但 behaviour policy 有 99% 的決策選 argmax（今天重跑 probe：新目標決策 top-1 0.964，每局只有 0.42 次非 argmax 的目標嘗試），所以沒選過的氣球的 Q 全是外插。critic 要從零學，BC 和 25M 步的權重不能當 Q 用。\n(4) 時間：實作加調參要 5–7 天，會和計畫 B 搶同一個叢集。\n\n到 10/10 的預估：\n| 方案 | 範圍 | 中位數 | 信心 |\n|---|---|---|---|\n| 離散 SAC | −1.0 ~ +0.3 顆/局 | 約 −0.3 | 高 |\n| DQN | −0.5 ~ +0.1 | 約 −0.3 | 高 |\n| 連續 / hybrid SAC 做 lead 或殘差 | −0.5 ~ +0.3 | 約 0 | — |\n\n值得借的只有 SAC 的一個零件：只在「換新目標」的決策上維持熵，或在分叉時做 argmax 不變的溫度重設。在 PPO 裡改大約 20 行。\n\n真正該換的是動作介面（計畫 B），演算法維持 async PPO + SIL。有一點要說清楚：我對 B 的預期比分析者低。「80→88」是對一個永遠不交棒的 strict 老師量的，而真正的 policy 已經在擊破前 0.58 s 自己交棒。B 的預期約 +0.1~+0.6 顆/局（中位數 +0.25），所以開重訓前要先過一個半天的閘門測試。\n\n另外要誠實說：每局標準差約 1.1–1.5 顆，所有方案的增益都比兩局抽到的 seed 運氣小。",
+  "ranking": [
+   {
+    "rank": 1,
+    "name": "閘門實驗：s4 own-order 測試（決定 B 值不值得做）",
+    "why": "B 所有的增益數字都來自 scenario 1 strict、11 份 replay（只有 5 個不同 seed），而且對照的是不交棒的老師。這個基準的差距裡，大部分是 policy 本來就會的交棒：strict 交棒 80→96，free 約 0。lead05 87 ≈ lead10 88（燃燒內 87 vs 85），多出來的 0.5–1.0 s 視窗沒有增益。verifier 在 9 份不重複的飛行上：時機抓好的盲交棒 TAU 0.7 = 74，知道整跳下一顆的 hit-constrained blend = 77（基準 63），差約 +0.33 顆/飛行，而且下一顆是完美的。所以要在 s4、用 policy 自己的順序、對「仿 policy 的交棒」基準量 B 的 GNC 半部。做法：192 個新 s4 seed，s4bw4@25,670,400 先照常飛、記錄自己的擊破順序；同 seed 用 replay_teacher 類的老師照自己的順序重飛。變體：(a) strict 不交棒；(b) 仿 policy 盲切換（GNC min reach time ≤0.7 s）；(c) (b) + 舊目標 must-hit blend，r_ok 0.8/1.0/1.2；(d) chain_sim mode 2 blend，下一顆只在 t_go ≤1.1 s 時可知；(e) 同 (d) 但整跳可知；(f) (b) + lead05/lead10。先確認 (b) 和 free policy 差 ≤0.3，否則基準不可信。",
+    "expected_gain_pops": "本身 0；它決定 B 值 +0.3 左右還是約 0",
+    "days": 0.5,
+    "kill_criterion": "這是 B 的 GNC 半部的 kill test。(d)−(b) < +0.1 顆/局，而且每跳起始 Tmin 降不到 0.1 s → 不做 next head，B 退回 B-lite 或直接跳過。(d)−(b) ≥ +0.25 → 照完整 B 做。(e) 明顯勝過 (d) 也不能提早 commit，因為 policy 的第二選擇在擊破前 2.1 s 只有 36% 是真正的下一顆。"
+   },
+   {
+    "rank": 2,
+    "name": "計畫 A：燃燒結束模式（gnc_agent eob=1，已實作）",
+    "why": "對到的是瓶頸以外、另一塊已量到的損失：前段班燃燒結束後每局還打 1.36 顆，我們燃燒結束前約 1 s 就停了。不用重訓就能配對測試，程式已經在 gnc_agent.py:96-101、379-400。policy 會和 GNC 共適應，所以若有效，要從 B 分叉的第一刻就帶上，不要之後再換一次 GNC。",
+    "expected_gain_pops": "+0.1~+0.3 顆/局（§132 估計，上限約 0.9）；信心中偏低",
+    "days": 0.5,
+    "kill_criterion": "192 個新 s4 seed 配對：差 < 0，或燃燒後擊破沒有增加 → 關掉。≥ 0 → 併進 B 的分叉。"
+   },
+   {
+    "rank": 3,
+    "name": "計畫 B（重新界定）：PPO + 每跳 commit 一次的 next pointer + hit-constrained blend，從 s4bw4@25,670,400 重訓",
+    "why": "這是唯一同時碰到瓶頸兩半的選項：抵達塑形，加上讓轉折小的序列真的變值錢。但預期要下修：GNC 半部在 free policy 之上大約只剩 +0.1~0.2（見第 1 項）。選序那一塊的比例在 verifier 那裡是 UNCERTAIN（33–63%），而且前段班的序列有挑 seed 的成分。今天量的（20 局 s4、189 次交棒）：最後一次換目標前的決策（擊破前約 1.1 s），policy 的第二選擇 = 真正下一顆 65%，top-2 含有 88%；擊破前 1.6 s 51%、2.1 s 36%。所以 next head 從 tgt head 複製初始化是可行的，但只能在擊破前 ≤1.1 s commit。重訓不能照 s4cont 的 2.5–5M 算，因為這是要學新行為，要預留 10–20M 決策。",
+    "expected_gain_pops": "+0.1~+0.6 顆/局，中位數約 +0.25（兩局加總約 +0.5）；信心低。10/7 前驗證出 ≥ +0.14 的機率約 45%。",
+    "days": 6,
+    "kill_criterion": "閘門沒過就不做。+8 h：落後 > 0.2（約 3 SE），而且 Tmin 和轉折角都沒動 → 停。+24 h（約 15–20M 決策）：384 個新 seed 對分叉點配對（每邊取 2–3 個相鄰 checkpoint 平均），沒有 ≥ +0.14，而且 Tmin 沒降 ≥0.1 s、轉折角沒降 → 停，恢復主線 + A。10/7 晚上凍結。"
+   },
+   {
+    "rank": 4,
+    "name": "PPO 內借 SAC 的熵：分叉時 argmax 不變的溫度重設（tgt.w/tgt.b/prior 與 str 權重 ÷3）＋只在換新目標的決策加熵項＋每個頭記錄熵",
+    "why": "探索崩潰是實測到的：新目標決策 H = 0.095 nats、top-1 0.964，每局 0.42 次非 argmax 嘗試。keep 決策的 logit 差中位數約 40 nats。rl3_net 的 target logit = tgt(h) + prior·(−t1)，是線性的，所以縮放後 argmax 位元不變，確定性評估起點完全相同。但反向證據也在：§63 老師示範 SIL 後保留集沒動，§8 和 §49 的高熵或分散化都變差。所以單獨用大概 0；價值在於讓 B 的新序列學得到。B 實作期間叢集本來就閒著，成本幾乎是 0。",
+    "expected_gain_pops": "單獨 0~+0.2（中位數約 0）；在 B 之上是讓 B 學得起來的前提，數值未知；信心低",
+    "days": 0.75,
+    "kill_criterion": "control（s4bw4 原樣接續）vs 溫度重設，各半個叢集，相同步數（約 5–6M），384 個新 seed 配對。落後 > 0.1 → 不用。≥ +0.14 → 併進 B 的分叉。平手 → 只用在 B 的 next head 初始化（÷2–3）。2M 決策內新目標熵又掉回 < 0.03 nats → 重設無效。"
+   },
+   {
+    "rank": 5,
+    "name": "B-lite：舊目標 must-hit 保護 + 重訓讓 policy 用現有指標自己提早換（零新參數）",
+    "why": "policy 已經在 GNC min reach time 約 0.7 s 時盲切換，44/45 顆是切走後靠慣性打中的。must-hit blend（verifier 的 fix 2，chain_sim mode 2 已有程式）讓更早切換變安全，PPO 只要把已經在做的行為往前移。不需要新的頭，沒有 next head 的初始化或 credit 問題，也沒有 commit 一致性問題。不重訓時在 free 模式量到 +0.05 ± 0.20，屬於中性起點。缺點：下一顆要到切換那一刻才知道，塑形視窗受 0.5 s 決策粒度量化。",
+    "expected_gain_pops": "0~+0.3 顆/局（中位數約 +0.1）；信心低",
+    "days": 4,
+    "kill_criterion": "只在閘門顯示 (c) 勝過 (b)、但 (d)−(c) < +0.1 時，才取代完整 B。停止規則和 B 相同；最晚 10/3 開跑，否則趕不上挑 checkpoint。"
+   },
+   {
+    "rank": 6,
+    "name": "學出來的連續 lead 參數（PPO 高斯頭，沿用 RL3_ATTC 模式），疊在 B 上",
+    "why": "只在「依狀態調 lead」明顯勝過固定最佳值時才有用。strict 的 T_LEAD 反應很平（0.5/1.0/1.5 → 87/88/83），先驗上空間很小。真要做就用 PPO 高斯頭：零初始化，偏置設在閘門找到的最佳固定值，起點位元相同；不要用 SAC。",
+    "expected_gain_pops": "在 B 之上 +0~+0.2",
+    "days": 1,
+    "kill_criterion": "閘門那批同時跑 6 組 (T_LEAD, δ) 和 6 組 placebo（幾乎相同的設定，用來扣掉混沌造成的 best-of-k 膨脹）。每局最佳 − 全體固定最佳，扣掉 placebo 後 < +0.2 顆/局 → 寫死固定值，不做這個頭。"
+   },
+   {
+    "rank": 7,
+    "name": "s4 搜尋老師 headroom 診斷（只在本機或閒置核心；不做 ExIt 蒸餾）",
+    "why": "用來量「不靠 seed 知識、在現有 GNC 下」選序能多拿多少，決定序列搜尋、ExIt、pair 特徵有沒有空間。§63 的 +0.84 是 s1、舊 policy、beam 4 / top-4 / 1 檔速度，是下限不是上限。但蒸餾進參賽血統正是主辦方在 §116 追問過的東西，而且 §63 蒸餾後保留集沒動。",
+    "expected_gain_pops": "本身 0；ExIt 到 10/10 約 0~+0.4，但不建議在 11 天內做",
+    "days": 0.5,
+    "kill_criterion": "192 個新 s4 seed 配對，老師 − policy < +0.5，或老師路線的每跳 T0 沒低 ≥ 0.15 s → 砍掉所有序列搜尋和 ExIt。"
+   },
+   {
+    "rank": 8,
+    "name": "離散 SAC（pointer softmax actor + 每個 token 的 twin Q + 自動 α）取代 async PPO",
+    "why": "動作空間不變，碰不到抵達塑形。樣本不是限制。Q 沒有非 argmax 動作的資料。critic 從零學、要先凍結 actor 暖機幾百萬筆，再用 KL 綁回 PPO，等於用 5 倍程式碼重做 PPO 的 trust region。可變的氣球集合讓目標熵定義不清（log n_alive 從 4.6 到 0）。GNC 一改（A、B）replay 就作廢。",
+    "expected_gain_pops": "−1.0~+0.3 顆/局（中位數約 −0.3）；信心高",
+    "days": 6,
+    "kill_criterion": "只有在叢集閒置時才做。離線 pointer-Q 重排：用 T=2 收 2–3M transition，在 learner GPU 上訓練 twin Q，重排 policy 的 top-3，384 個新 seed 配對。< +0.15 → 永久放棄。先驗預期會失敗。"
+   },
+   {
+    "rank": 9,
+    "name": "DQN 系列（branching / pointer-Q、Double/Dueling、n-step、Ape-X/R2D2）",
+    "why": "缺點比離散 SAC 更多：BC 和 policy 權重都不能沿用。ε-greedy 隨機換目標一次就浪費 2–3 s。100 個目標上的最大化偏差在 s4 雜訊下更大。n-step 也沒有額外的 credit：GAE 的 γλ = 0.94，一跳後權重還有 0.69。",
+    "expected_gain_pops": "−0.5~+0.1 顆/局（中位數約 −0.3）；信心高",
+    "days": 5.5,
+    "kill_criterion": "用同一個離線 Q 重排測試，< +0.15 就放棄。建議根本不花這個叢集時間。"
+   },
+   {
+    "rank": 10,
+    "name": "連續 / hybrid SAC 做 lead-out 或 10–20 Hz 殘差",
+    "why": "雖然瞄準抵達那一塊，但殘差沒有下一顆就沒有參考方向，本質上是 B 的超集合。20 Hz 會讓決策數變 5–10 倍、γ 和 value 要重新校準；hybrid Q(s,i,u) 從零開始，而且很脆弱。對 1–2 維的 lead，PPO 高斯頭（第 6 項）一樣好。",
+    "expected_gain_pops": "−0.5~+0.3（約 0）",
+    "days": 5,
+    "kill_criterion": "和第 6 項同一個 oracle 測試；扣掉 placebo 後 < +0.2 顆/局 → 任何演算法都不做。"
+   },
+   {
+    "rank": 11,
+    "name": "V-trace / IMPALA 修正、PPG、加重 SIL 或 replay",
+    "why": "丟棄率 0–1.3%、落後大多 ≤1 個版本（§32），clip 0.1 已足夠。SIL 對 p≈1 的動作梯度 ∝ (1−p) ≈ 0，而且 SIL 11 的 A/B 是 0。都碰不到路線瓶頸。",
+    "expected_gain_pops": "0 ± 0.1",
+    "days": 1,
+    "kill_criterion": "B 分叉上線後讀 status.json：dropped < 5% 且 lag 大多 ≤1 → 不做（目前已經是這樣）。"
+   },
+   {
+    "rank": 12,
+    "name": "執行時 MCTS / beam lookahead 推翻 policy",
+    "why": "在這個專案已經失敗過：search_k 7.69→4.89，DP 5.20 vs 9.27，很少推翻的錨定版仍 −1.20 ± 0.33，推翻目標 −0.55~−1.5。燃燒結束後點質量模型就失效。",
+    "expected_gain_pops": "約 −0.3 ± 0.5",
+    "days": 3.5,
+    "kill_criterion": "不做。硬要做就只跑影子模式：模型預測的優勢和實際結果的相關 < 0.2 → 砍。"
+   },
+   {
+    "rank": 13,
+    "name": "端到端低階控制（TVC/油門 RL）、MuZero / AlphaZero",
+    "why": "§132：每跳執行開銷 0.54 vs 0.57 s，推力利用率 0.91 vs 0.92，姿態迴路離最佳 ≤ 0.04 s/跳，低階沒有空間可以拿。要重新學 lag_comp、bwind 4、SL；AlphaZero 產資料的速度慢 100–1000 倍。",
+    "expected_gain_pops": "到 10/10 為 −3~0",
+    "days": 9,
+    "kill_criterion": "不做；紙上數字已足以否決。"
+   }
+  ],
+  "rejected_claims": [
+   "分析 1：「模擬器 oracle 只 +0.84，封頂了現有動作空間內任何更好的優化器」。§63 的老師是 beam 4、top-4 目標、1 檔速度、只在擊破點分岔，而且是 scenario 1、舊的 sil12 policy（約 7.75）。那是 headroom 的下限，不是上限。反對 SAC 的論證要靠其他證據：4 種學習器擾動都 null、Q 缺非 argmax 資料。",
+   "題目簡述與分析 1/2/4：「抵達偏差約 2/3 來自選序、轉折角 34° vs 47–54°」。workflow_result.json chaining 第 13 條被 verifier 標為 UNCERTAIN：選序比例依去重、第一跳弦、mean 或 median 的定義在 33–63% 之間擺盪；用平均數，轉折角只有 50.7° vs 44.7°；樣本只有 5 個不同 seed、scenario 1。以『要大量探索低轉折序列』為前提的論證，目標本身不確定。",
+   "題目簡述與分析 1/3：「固定順序 lead-out 80→88 ⇒ 約 +0.8 顆/局」。這是對永遠不交棒的 strict 老師量的；燃燒內只多 +5（lead10）和 +7（lead05）；lead05 ≈ lead10，也就是 0.5 s 的視窗，而 free policy 在 GNC min reach time 約 0.7 s 時盲切換已經涵蓋這一段。交棒本身在 strict 是 80→96，在 free 約 0。verifier 的資料（9 份不重複飛行）：知道整跳下一顆的 blend 77 vs 時機抓好的盲交棒 74，只多約 +0.33 顆/飛行，而且是完美的下一顆。所以 B 的 GNC 半部在真正 agent 之上大約 ≤ +0.2~0.3 顆/局，不是 +0.5~1.0。",
+   "分析 4：MPC 候選「遠側偏移 0–1.2 m」和「heuristic lead 做不出前段班遠側 1.1 m 再彎進去的打法」。chaining 第 6 條的 verifier 已指出，那個遠側偏移是約 4 m/s² 朝下一顆側向加速度的直線外插假象，不是可以瞄準的幾何。另外拿來佐證的「strict blend +16」主要是 free policy 本來就有的交棒。",
+   "分析 4：「樂觀上限 0.6 s/跳 ≈ +1.7 顆」。這包含挑 seed 最佳化的序列和交棒效果。verifier 的交棒後上限是 0.26 s/跳，以每局燃燒內約 7.5–8 跳算約 0.6–1 顆，而且這是下一顆完美時的上限。",
+   "分析 1/2：「critic 選目標已經失敗三次（§60B、§103、§86/§91），所以 Q critic 必敗」。直接證據被誇大了：§60B 是 critic 被拿去評估想像中的打中後狀態；§103 是手寫的物理價值 J；§86/§91 是從起飛狀態回歸整局顆數。Q 特有的真正問題是另一個：behaviour policy 有 99% 選 argmax，沒選過的動作的 Q 全是外插。結論（不換）仍成立，但理由要引對。",
+   "分析 2 與先前 g2 測試：「複製 tgt head = policy 的第二選擇，已實測中性（−0.05 ± 0.17）」。那次測試下一顆只猜中 8/163，其實沒有測到『正確的下一顆』。我今天實測（/tmp/sac_probe2/probe2.py、an.py；s4bw4@25,670,400 + rl2_sl_25670400，scenario 4，seed 33000–33019，確定性，平均 9.6 顆，189 次交棒）：最後一次換目標前的決策（擊破前約 1.1 s），第二選擇 = 真正下一顆 65%、top-2 含有 88%；1.6 s 前 51%；2.1 s 前 36%。所以複製初始化只在擊破前 ≤1.1 s commit 時合理；在跳躍一開始就 commit（mode 2 整跳塑形的假設）會錯約 2/3。對照 freelead10：只猜對 32% 時，燃燒內擊破 104 → 95。",
+   "分析 1：「SAC replay 記憶體 12.5 GB 是實際風險」，以及題目簡述的「只有 CPU」。dev/async.sbatch 申請了 --mem=160G 和 --gres=gpu:1，learner 在 GPU 上。算力和記憶體都不是否決 SAC 的理由，真正的理由是價值和時程。",
+   "分析 1：「PPO 2.5–5M 決策就能重新適應，所以 B 的重訓不受樣本限制」。s4cont 的 7.25→9.05 是同樣動作語意下的重新校準。B 要學的是新的頭和新行為，每跳的收益只有約 0.03–0.1 顆，而每局標準差 1.1–2 顆，要預留 10–20M 決策（全叢集約 12–24 h）才判斷。§132 原本「+8 h 沒領先 ≥2 SE 就停」太緊。",
+   "分析 1 的自動 α「在 B 之上 0~+0.3，因為 lead10 +8/80 ≈ +0.8/局」。沿用了上面 80→88 的高估。",
+   "分析 2：「叢集一天 15–17M 決策」vs 分析 1：「25–32M」。用 checkpoint 時間戳推算，s4bw4 在約半個叢集上是 0.55–0.64M/h（13–15M/天），全叢集約 25–30M/天。不管哪個數字，樣本都不是限制，對結論沒有影響。",
+   "多份分析：「前段班 agent 叫 'RL AGENT 100M STEP (PPO…)'，所以差距不在演算法」。這是弱證據：他們的 18–20 顆是挑 seed 加微調的（其他 seed 5–13），名字只證明 PPO 夠用，說明不了他們每跳的路線從哪來。不要依賴這一點。"
+  ],
+  "recommended_schedule": "今天是 9/28（一）08:15，資格賽 10/10（六）。\n\n9/28（今天）\n- 叢集約 100 核 × 3–4 h：s4 own-order 閘門測試（ranking #1 的 (a)–(f)，192 個新 seed，r_ok 0.8/1.0/1.2；同一批加 6 組 lead 設定和 6 組 placebo，給 #6 判斷用）。\n- 叢集約 50–100 核 × 2–3 h：計畫 A（eob=1）192 seed 配對。\n- 其餘約 200 核：溫度重設 A/B 開跑。control = s4bw4 從 async_last.pt 原樣接續；實驗 = tgt/prior/str ÷3，分叉前先用 96 seed 驗證確定性動作位元相同。learner 加上每個頭的熵紀錄。\n- 本機：把 chain_sim mode 2 的 hit-constrained blend 移進 GNCAgent，接受 policy 給的 next，預設關閉，關閉時要和現行 SHA1 位元相同。\n\n9/29\n- 早上讀閘門和 A 的結果，決定 B 的形式：\n  - (d)−(b) ≥ +0.25 → 完整 B。\n  - +0.1~0.25 → 做 B，但預期下修。\n  - < +0.1 → 不做 next head；(c) > (b) 就改走 B-lite，否則跳過 B。\n- 溫度 A/B 相同步數中途檢查（384 個新 seed）。\n- 實作 next head：只在最後一次換目標前的決策 commit 一次、log-prob 用 phase mask、tgt 複製初始化 + 零初始化 bilinear、lead / blend 增益在 1–1.5M 決策內從 0 拉到 1、零初始化的軟承諾 token 特徵。\n- 驗證：增益為 0 時每步動作 SHA1 與 s4bw4@25,670,400 相同；make_single_file 產生的單檔版也要相同。\n\n9/30\n- 從 s4bw4@25,670,400 分叉 B，全叢集。若 A 配對 ≥0 就帶上 eob；若溫度 A/B 不輸就帶上熵設定。γ 0.99、LR 1e-4、SIL ≥10 都不動。\n- 追蹤領先指標：每跳起始 Tmin（2.35 s → ?）、連續兩顆的轉折角、next head 的熵、第二選擇的命中率。\n\n10/1\n- +8 h 檢查：落後 > 0.2 且領先指標沒動 → 停。\n- +24 h（約 15–20M 決策）：384 個新 seed 對分叉點配對，需要 ≥ +0.14，否則停，恢復主線 + A。\n\n10/2–10/6\n- 繼續贏的那條線。\n- 若 B 在 10/1 失敗：10/3 前還能開 B-lite，或者全部回主線 + A（+ 溫度，若有效）。\n- 不跑 SAC/DQN。若使用者堅持要看，只在叢集閒置時跑離線 pointer-Q 重排測試。\n\n10/7 晚上：凍結訓練。\n\n10/8–10/9\n- 用 ≥768 個新 seed 挑 checkpoint：最佳線最後 6–10 個 checkpoint，加上平台期保底 s4bw4@25.38M–25.67M。\n- make_single_file，用官方 evaluate.py 跑 scenario 4 驗證牆鐘時間（上限 600 s，含 100 s reset）。\n- 穩健性世界（散佈 ×1.5、陣風 7.5 m/s）只在平手時當決勝。\n\n10/10：資格賽。",
+  "changes_to_plan_B": "要改，改 7 點。B 仍用 async PPO，不換演算法。\n\n1. 開重訓前加半天的 s4 own-order 閘門。「80→88」是對不交棒的 strict 老師量的：燃燒內只有 +5/+7，lead05 ≈ lead10，而且大多是 free policy 已經在做的交棒。要在 s4、用 policy 自己的順序，對「仿 policy 盲切換」的基準量 B 的 GNC 半部。(d)−(b) < +0.1 顆/局，而且 Tmin 降不到 0.1 s → 不做 next head。\n\n2. GNC 半部優先用 hit-constrained blend（chain_sim mode 2 的 λ blend，舊目標 must-hit，r_ok 要在 s4 掃 0.8–1.2），而不是 lead10 的「剩餘推力、0.7 m 上限」。blend 在 strict 是 96 vs lead10 88，而且有明確的命中保證。s4 的 GNSS 精度 2 m，大於氣球半徑 1.5 m，所以 s1 量出來的餘裕不能直接沿用。兩者都放進閘門比較。\n\n3. 「下一顆」在擊破前約 ≤1.1 s commit 一次。具體做法是在 policy 最後一次持有目前目標的決策，不是在跳躍一開始。實測第二選擇命中率：1.1 s 前 65%（top-2 88%）、1.6 s 前 51%、2.1 s 前 36%。next head 的 log-prob 只在這個 commit 決策計入，比照 rl3_net pre/post-launch 的 phase mask，其餘決策固定、log-prob 為 0。\n\n4. 初始化：next head = 複製 tgt head（遮掉目前目標）+ 零初始化、以目標為條件的 bilinear 項；再加一個零初始化的「已承諾下一顆」token 特徵（軟承諾，不做硬承諾，因為硬性推翻量到 −0.55~−1.5）。lead / blend 增益在 1–1.5M 決策內從 0 拉到 1，讓分叉點位元相同，也避免猜錯時掉分：猜對 32% 時燃燒內 104→95。next head 的 logits 起始溫度 ÷2–3，避免一開始就崩成確定性。learner 要記錄每個頭的熵。\n\n5. A 的 192 seed 配對若 ≥ 0，就從分叉的第一刻帶上 eob，只換一次 GNC，讓 policy 一次共適應。溫度 A/B 不輸就帶上「只在換新目標的決策」的熵設定。其他學習參數（γ 0.99、LR 1e-4、SIL ≥10、BATCH 19200）都不動，避免無法歸因。\n\n6. 停止規則放寬到合理範圍。+8 h 只有在落後 > 0.2（約 3 SE）且 Tmin 和轉折角都沒動時才停；主要判斷點在 +24 h（約 15–20M 決策），384 個新 seed 對分叉點配對、每邊平均 2–3 個相鄰 checkpoint，需要 ≥ +0.14；10/7 晚上凍結，平台期 checkpoint 當保底。\n\n7. 預期值下修到 +0.1~+0.6 顆/局（中位數約 +0.25，兩局加總約 +0.5；信心低），不是分析者的 +0.3~1.0。閘門若顯示 GNC 半部只有 must-hit 保護有用，就改走 B-lite：零新參數，policy 用現有指標自己學提早換目標；最晚 10/3 要開跑。"
+ }
+}

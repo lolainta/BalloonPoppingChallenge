@@ -1,0 +1,11 @@
+their        first 4.68 last 32.55 window 27.87 hops/run 12.09 period 2.31 pops 144 | burnout(s since first live row) min 29.24 max 42.23 | last pre-burnout pop->30 s mean 0.77 med 0.80; P/2 1.15; renewal E[g^2]/2E[g] (burn gaps) 1.46; post-burn pops 15
+             bins 0-5/5-10/10-30/>30: [9, 15, 105, 15]  pops by t+10: 24
+ours_strict  first 6.22 last 28.24 window 22.02 hops/run 6.27 period 3.51 pops 80 | burnout(s since first live row) min 29.99 max 40.61 | last pre-burnout pop->30 s mean 1.76 med 1.98; P/2 1.76; renewal E[g^2]/2E[g] (burn gaps) 2.04; post-burn pops 0
+             bins 0-5/5-10/10-30/>30: [2, 14, 64, 0]  pops by t+10: 16
+ours_free    first 5.42 last 28.98 window 23.56 hops/run 8.55 period 2.76 pops 105 | burnout(s since first live row) min 29.98 max 42.21 | last pre-burnout pop->30 s mean 1.23 med 1.67; P/2 1.38; renewal E[g^2]/2E[g] (burn gaps) 1.57; post-burn pops 1
+             bins 0-5/5-10/10-30/>30: [4, 25, 75, 1]  pops by t+10: 29
+
+strict deficit 5.82 pops/run; window gap 5.85 s = first 1.54 + last 4.31
+window share at THEIR period 2.54 pops (44%); at OUR period 1.67 pops (29%)
+last-pop gap 4.31 s = their post-burnout extension 3.33 s + pre-burnout gap difference 0.98 s (random-phase expectation of that difference (Ps-Pt)/2 = 0.60 s)
+first-pop gap 1.54 s -> 0.67 pops at their period; post-burnout pops their 1.36/run

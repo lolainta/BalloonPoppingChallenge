@@ -1,0 +1,171 @@
+[
+ {
+  "name": "10_CoolBa",
+  "variant": "lead10f",
+  "pops": 9,
+  "pops_burn": 9,
+  "hops": [
+   7.58,
+   2.61,
+   2.35,
+   3.38,
+   2.13,
+   3.48,
+   1.64,
+   3.06,
+   3.46
+  ]
+ },
+ {
+  "name": "10_SpaceY",
+  "variant": "lead10f",
+  "pops": 6,
+  "pops_burn": 5,
+  "hops": [
+   3.55,
+   4.17,
+   3.85,
+   10.78,
+   5.16,
+   2.62
+  ]
+ },
+ {
+  "name": "11_Mochi",
+  "variant": "lead10f",
+  "pops": 6,
+  "pops_burn": 5,
+  "hops": [
+   7.03,
+   2.35,
+   4.01,
+   2.62,
+   6.42,
+   7.75
+  ]
+ },
+ {
+  "name": "11_near_miss",
+  "variant": "lead10f",
+  "pops": 8,
+  "pops_burn": 8,
+  "hops": [
+   4.79,
+   3.86,
+   3.23,
+   1.96,
+   4.76,
+   3.62,
+   4.1,
+   3.55
+  ]
+ },
+ {
+  "name": "12_Apex",
+  "variant": "lead10f",
+  "pops": 6,
+  "pops_burn": 6,
+  "hops": [
+   7.36,
+   2.9,
+   3.32,
+   2.08,
+   2.47,
+   3.01
+  ]
+ },
+ {
+  "name": "13_Apex",
+  "variant": "lead10f",
+  "pops": 6,
+  "pops_burn": 6,
+  "hops": [
+   7.36,
+   2.9,
+   3.32,
+   2.08,
+   2.47,
+   3.01
+  ]
+ },
+ {
+  "name": "13_Yaka",
+  "variant": "lead10f",
+  "pops": 7,
+  "pops_burn": 6,
+  "hops": [
+   7.07,
+   2.86,
+   5.54,
+   2.39,
+   4.86,
+   4.62,
+   3.35
+  ]
+ },
+ {
+  "name": "14_SpaceBerry",
+  "variant": "lead10f",
+  "pops": 6,
+  "pops_burn": 6,
+  "hops": [
+   6.68,
+   5.39,
+   3.01,
+   2.4,
+   5.88,
+   3.29
+  ]
+ },
+ {
+  "name": "16_SpaceBerry",
+  "variant": "lead10f",
+  "pops": 10,
+  "pops_burn": 9,
+  "hops": [
+   5.23,
+   1.78,
+   4.14,
+   2.21,
+   1.63,
+   2.65,
+   2.0,
+   3.23,
+   2.9,
+   4.53
+  ]
+ },
+ {
+  "name": "16_TeamDJ",
+  "variant": "lead10f",
+  "pops": 7,
+  "pops_burn": 6,
+  "hops": [
+   6.56,
+   3.44,
+   4.4,
+   3.7,
+   3.21,
+   4.03,
+   5.83
+  ]
+ },
+ {
+  "name": "18_Taoyuan",
+  "variant": "lead10f",
+  "pops": 10,
+  "pops_burn": 9,
+  "hops": [
+   5.23,
+   1.78,
+   4.14,
+   2.21,
+   1.63,
+   2.65,
+   2.0,
+   3.23,
+   2.9,
+   4.53
+  ]
+ }
+]

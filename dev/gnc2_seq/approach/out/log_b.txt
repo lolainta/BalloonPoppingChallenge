@@ -1,0 +1,9 @@
+[chaos] seed 46004: best 10 greedy 10 finished [10, 10, 10, 10] legs 360  406.1s
+[chaos] seed 46005: best 11 greedy 11 finished [11, 11, 11, 11] legs 352  407.7s
+remaining 42 seeds
+[chaos] seed 46007: best 11 greedy 10 finished [10, 11, 11, 11, 11] legs 408  426.2s
+[chaos] seed 46006: best 11 greedy 11 finished [11, 11, 11, 11] legs 432  432.6s
+remaining 40 seeds
+[chaos] seed 46008: best 10 greedy 10 finished [10, 10, 10, 10] legs 344  338.5s
+[chaos] seed 46009: best 10 greedy 10 finished [10, 10, 10, 10] legs 304  342.0s
+remaining 38 seeds

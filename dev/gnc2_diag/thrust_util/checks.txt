@@ -1,0 +1,4 @@
+their        |f_sp|/a_max p99 1.014 max 1.08  steps >1.05: 42  f_z<1: 0.0160  f_z<0: 0.0100  f_z<3: 0.0292
+ours_strict  |f_sp|/a_max p99 1.010 max 1.01  steps >1.05: 0  f_z<1: 0.0248  f_z<0: 0.0095  f_z<3: 0.0484
+ours_free    |f_sp|/a_max p99 1.012 max 1.01  steps >1.05: 0  f_z<1: 0.0087  f_z<0: 0.0039  f_z<3: 0.0231
+ours at throttle 1 (gimbal-cos corrected): U median 1.0000 p5 0.9923 p95 1.0149 n=20115

@@ -1,0 +1,10 @@
+[ours_strict] guided steps 32435; angle>20 deg in 0.321 of them; lost thrust (|F|(1-cos)) 42.8 m/s per run
+   <=1 s after a target switch  time share 0.300  share of >20deg time 0.496  share of lost thrust 0.505  (>20deg within phase 0.531)
+   last 0.5 s before a pop      time share 0.126  share of >20deg time 0.229  share of lost thrust 0.272  (>20deg within phase 0.584)
+   rest (mid-hop)               time share 0.574  share of >20deg time 0.275  share of lost thrust 0.223  (>20deg within phase 0.154)
+   rate of the wanted direction F (deg/s): mid-hop median 46.3 p90 238.1 frac>143 (2.5 rad/s) 0.203; last 0.5 s median 284.0 p90 1472.3 frac>143 0.647
+[ours_free] guided steps 32437; angle>20 deg in 0.246 of them; lost thrust (|F|(1-cos)) 29.0 m/s per run
+   <=1 s after a target switch  time share 0.360  share of >20deg time 0.779  share of lost thrust 0.769  (>20deg within phase 0.533)
+   last 0.5 s before a pop      time share 0.023  share of >20deg time 0.029  share of lost thrust 0.036  (>20deg within phase 0.319)
+   rest (mid-hop)               time share 0.618  share of >20deg time 0.192  share of lost thrust 0.195  (>20deg within phase 0.077)
+   rate of the wanted direction F (deg/s): mid-hop median 39.5 p90 209.2 frac>143 (2.5 rad/s) 0.166; last 0.5 s median 124.1 p90 1906.4 frac>143 0.471

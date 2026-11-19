@@ -1,0 +1,6 @@
+A5_pre         seed 10000  hash 6e750d7aa71047a5  steps 7057  popped 10  launch 34.00  off  counts {}  first None  979s
+A5_post        seed 10000  hash 6e750d7aa71047a5  steps 7057  popped 10  launch 34.00  off  counts {}  first None  962s
+A5_pre         seed 10001  hash 70008a266970a35e  steps 8285  popped 11  launch 41.50  off  counts {}  first None  712s
+A5_post        seed 10001  hash 70008a266970a35e  steps 8285  popped 11  launch 41.50  off  counts {}  first None  678s
+
+[exited with code 0]

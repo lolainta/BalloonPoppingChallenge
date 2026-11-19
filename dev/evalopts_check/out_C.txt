@@ -1,0 +1,12 @@
+scenario 4 base ['policy_path=./runs/s4res2/rl3_policy_116668800.npz', 'sl_path=./runs/s4res2/rl2_sl_116668800.npz', 'P.max_wall_time=36000'] seeds 2
+  [base]  mean 10.500  diff +0.000 +- 0.000
+  [ho_keep=1.0]  mean 11.000  diff +0.500 +- 0.354
+  [redecide=1]  mean 11.000  diff +0.500 +- 0.354
+  [redecide=2]  mean 11.000  diff +0.500 +- 0.354
+  [ho_T=1.0]  mean 10.000  diff -0.500 +- 1.061
+  [eob_pick=1]  mean 10.500  diff +0.000 +- 0.000
+  [eob_align=20]  mean 10.500  diff +0.000 +- 0.000
+  [ens=./runs/s4res2/rl3_policy_116438400.npz,./runs/s4res2/rl3_policy_116179200.npz]  mean 11.000  diff +0.500 +- 0.354
+  [ho_keep=1.0 redecide=2 ho_T=1.0 eob_pick=1 eob_align=20 ens=./runs/s4res2/rl3_policy_116438400.npz,./runs/s4res2/rl3_policy_116179200.npz]  mean 10.500  diff +0.000 +- 0.000
+
+[exited with code 0]

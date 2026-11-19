@@ -1,0 +1,6 @@
+policy_path=runs/ppo5/rl2_policy_57600.npz use_sl=0 launch_time=10
+policy_path=runs/ppo5/rl2_policy_57600.npz use_sl=0 launch_time=15
+policy_path=runs/ppo5/rl2_policy_57600.npz use_sl=0 launch_time=20
+policy_path=runs/ppo5/rl2_policy_57600.npz use_sl=0 launch_time=25
+policy_path=runs/ppo5/rl2_policy_57600.npz use_sl=0 launch_time=30
+policy_path=runs/ppo5/rl2_policy_57600.npz use_sl=0 launch_time=35

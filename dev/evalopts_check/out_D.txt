@@ -1,0 +1,8 @@
+elapsed 1230 s
+initialised from ./runs/s4res2/rl3_policy_116668800.npz
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:820.)
+  + (f"newent {np.average([e[0] for e in ent_log], weights=[e[1] for e in ent_log]) if ent_log else float('nan'):.3f} alpha {float(log_alpha.exp()):.4f} " if NEWENT else "")
+v1 steps 448 batch 448 mean_r 11.00 lag 0.00 workers 3 sps 1 newent 0.527 alpha 0.0200 demos 0/0 teacher 0 dropped 0/7 (0.0%) lag_hist [7, 0, 0, 0, 0, 0]
+v2 steps 896 batch 448 mean_r 10.17 lag 0.43 workers 3 sps 1 newent 0.062 alpha 0.0201 demos 0/0 teacher 0 dropped 0/7 (0.0%) lag_hist [4, 3, 0, 0, 0, 0]
+
+[exited with code 0]

@@ -1,0 +1,4 @@
+# ho_keep port check: this agent (ho_keep=1) vs dev/gnc2_gate/gate.py Gate(free=1, keep=1) on the same checkpoint / seed
+G3_mine ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res/rl3_policy_99561600.npz ./runs/s4res/rl2_sl_99561600.npz 10000 ho_keep=1.0
+G3_gate ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res/rl3_policy_99561600.npz ./runs/s4res/rl2_sl_99561600.npz 10000 gate_keep=1.0
+G5_gate ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 gate_keep=1.0

@@ -1,0 +1,8 @@
+their        n=32725 U_ax mean 0.916 med 0.968 >0.95 0.567 <0.8 0.133 | |f_sp|/amax mean 0.914 | per run: avail 398.7 used 364.2 lost 34.8 m/s | int fz 296.0 int |fh| 171.7 grav 291.8
+             distinct flights 11: U_ax mean 0.916 >0.95 0.567
+ours_strict  n=32725 U_ax mean 0.903 med 0.960 >0.95 0.544 <0.8 0.165 | |f_sp|/amax mean 0.900 | per run: avail 398.7 used 358.8 lost 40.1 m/s | int fz 299.5 int |fh| 166.1 grav 291.8
+             exact model thr*cos(gimbal): mean 0.903 med 0.959 >0.95 0.540 <0.8 0.166; inferred-exact mean diff -0.0002
+             distinct flights 9: U_ax mean 0.898 >0.95 0.538
+ours_free    n=32725 U_ax mean 0.925 med 0.972 >0.95 0.601 <0.8 0.117 | |f_sp|/amax mean 0.921 | per run: avail 398.7 used 367.4 lost 31.7 m/s | int fz 309.8 int |fh| 170.0 grav 291.8
+             exact model thr*cos(gimbal): mean 0.924 med 0.970 >0.95 0.598 <0.8 0.118; inferred-exact mean diff +0.0008
+             distinct flights 5: U_ax mean 0.915 >0.95 0.577

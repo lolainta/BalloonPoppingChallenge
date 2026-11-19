@@ -1,0 +1,80 @@
+[appr] seed 46013: best 9 greedy 9 finished [9, 9, 9, 9] legs 360  447.3s
+[chaos] seed 46010: best 9 greedy 9 finished [9, 9, 9, 9] legs 328  447.8s
+[chaos] seed 46012: best 11 greedy 11 finished [10, 10, 11, 11] legs 400  449.9s
+[chaos] seed 46011: best 10 greedy 10 finished [10, 10, 10, 10] legs 344  451.3s
+[appr] remaining 34 seeds
+[chaos] remaining 35 seeds
+[chaos] seed 46014: best 9 greedy 9 finished [9, 9, 9, 9] legs 312  265.0s
+[chaos] seed 46013: best 9 greedy 9 finished [9, 9, 9, 9] legs 328  300.2s
+[appr] seed 46014: best 10 greedy 9 finished [9, 10, 10, 10, 10] legs 328  300.5s
+[appr] seed 46015: best 10 greedy 10 finished [10, 10, 10, 10, 10] legs 384  305.5s
+[appr] remaining 32 seeds
+[chaos] remaining 33 seeds
+[chaos] seed 46015: best 10 greedy 10 finished [10, 10, 10, 10] legs 312  400.0s
+[appr] seed 46017: best 11 greedy 11 finished [11, 11, 11, 11] legs 344  400.8s
+[chaos] seed 46017: best 11 greedy 11 finished [11, 11, 11, 11] legs 360  401.8s
+[chaos] seed 46016: best 13 greedy 13 finished [13, 13, 13, 13] legs 472  404.0s
+[appr] seed 46016: best 13 greedy 13 finished [11, 11, 13, 13, 13, 13] legs 400  406.2s
+[appr] remaining 30 seeds
+[chaos] remaining 30 seeds
+[chaos] seed 46020: best 9 greedy 9 finished [9, 9, 9, 9] legs 272  606.3s
+[chaos] seed 46019: best 10 greedy 9 finished [9, 10, 10, 10, 10] legs 360  606.7s
+[appr] seed 46020: best 10 greedy 9 finished [9, 9, 10, 10, 10, 10, 10] legs 352  609.3s
+[appr] seed 46019: best 11 greedy 9 finished [9, 11, 11, 11, 11] legs 368  609.8s
+[chaos] seed 46018: best 12 greedy 12 finished [11, 11, 12, 12] legs 408  610.9s
+[appr] seed 46018: best 14 greedy 12 finished [12, 12, 12, 14, 14, 14, 14] legs 480  615.3s
+[appr] remaining 27 seeds
+[chaos] remaining 27 seeds
+[appr] seed 46022: best 9 greedy 9 finished [9, 9, 9, 9, 9] legs 304  327.8s
+[chaos] seed 46022: best 10 greedy 9 finished [9, 10, 10, 10, 10] legs 336  329.2s
+[chaos] seed 46021: best 9 greedy 9 finished [9, 9, 9, 9] legs 344  334.4s
+[appr] seed 46021: best 11 greedy 9 finished [9, 11, 11, 11, 11] legs 352  352.8s
+[appr] seed 46023: best 10 greedy 10 finished [10, 10, 10, 10] legs 336  354.5s
+[appr] remaining 24 seeds
+[chaos] remaining 25 seeds
+[appr] seed 46024: best 9 greedy 9 finished [9, 9, 9, 9] legs 304  438.0s
+[chaos] seed 46024: best 9 greedy 9 finished [9, 9, 9, 9] legs 312  439.0s
+[chaos] seed 46025: best 9 greedy 9 finished [9, 9, 9, 9] legs 344  442.5s
+[chaos] seed 46023: best 10 greedy 10 finished [10, 10, 10, 10] legs 368  444.6s
+[appr] seed 46025: best 11 greedy 9 finished [9, 11, 11, 11, 11] legs 368  445.4s
+[appr] remaining 22 seeds
+[chaos] remaining 22 seeds
+[chaos] seed 46027: best 11 greedy 11 finished [11, 11, 11, 11] legs 368  566.0s
+[appr] seed 46028: best 11 greedy 9 finished [9, 10, 10, 11, 11, 11, 11] legs 344  566.1s
+[appr] seed 46026: best 10 greedy 10 finished [10, 10, 10, 10, 10] legs 368  566.8s
+[appr] seed 46027: best 12 greedy 11 finished [11, 11, 11, 12] legs 344  567.0s
+[chaos] seed 46026: best 10 greedy 10 finished [10, 10, 10, 10] legs 336  568.1s
+[appr] remaining 19 seeds
+[chaos] remaining 20 seeds
+[chaos] seed 46028: best 9 greedy 9 finished [9, 9, 9, 9] legs 288  733.4s
+[appr] seed 46030: best 10 greedy 10 finished [10, 10, 10, 10] legs 328  735.7s
+[appr] seed 46029: best 11 greedy 11 finished [11, 11, 11, 11] legs 376  751.8s
+[chaos] seed 46029: best 11 greedy 11 finished [11, 11, 11, 11] legs 352  753.7s
+[appr] remaining 17 seeds
+[chaos] remaining 18 seeds
+[chaos] seed 46030: best 10 greedy 10 finished [10, 10, 10, 10] legs 376  560.8s
+[chaos] seed 46031: best 10 greedy 10 finished [10, 10, 10, 10] legs 360  567.3s
+[appr] seed 46031: best 10 greedy 10 finished [9, 9, 10, 10, 10, 10] legs 312  589.4s
+[appr] remaining 16 seeds
+[chaos] remaining 16 seeds
+[chaos] seed 46032: best 10 greedy 9 finished [9, 10, 10, 10, 10] legs 328  776.6s
+[appr] seed 46033: best 10 greedy 10 finished [9, 9, 10, 10, 10, 10] legs 312  778.0s
+[appr] seed 46032: best 11 greedy 9 finished [9, 11, 11, 11, 11] legs 368  778.7s
+[appr] remaining 14 seeds
+[chaos] remaining 15 seeds
+[chaos] seed 46033: best 10 greedy 10 finished [10, 10, 10, 10] legs 368  508.1s
+[appr] seed 46034: best 11 greedy 9 finished [9, 11, 11, 11, 11] legs 352  510.9s
+[appr] remaining 13 seeds
+[chaos] remaining 14 seeds
+[chaos] seed 46034: best 11 greedy 9 finished [9, 11, 11, 11, 11] legs 360  482.3s
+[appr] seed 46035: best 10 greedy 10 finished [10, 10, 10, 10, 10, 10, 10] legs 344  496.4s
+[appr] remaining 12 seeds
+[chaos] remaining 13 seeds
+[chaos] seed 46035: best 10 greedy 10 finished [10, 10, 10, 10] legs 320  497.8s
+[appr] seed 46036: best 9 greedy 9 finished [9, 9, 9, 9, 9] legs 296  503.8s
+[appr] remaining 11 seeds
+[chaos] remaining 12 seeds
+[appr] seed 46037: best 10 greedy 10 finished [10, 10, 10, 10, 10] legs 344  437.8s
+[chaos] seed 46036: best 10 greedy 9 finished [9, 10, 10, 10, 10] legs 384  443.5s
+[appr] remaining 10 seeds
+[chaos] remaining 11 seeds

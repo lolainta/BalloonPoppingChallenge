@@ -1,0 +1,18 @@
+strict hold  10_CoolBa       pops  8 post-burn(>=29.99 s) 0 last pre-burn pop t+29.40
+strict hold  10_SpaceY       pops  5 post-burn(>=29.99 s) 0 last pre-burn pop t+27.47
+strict hold  11_Mochi        pops  6 post-burn(>=29.99 s) 0 last pre-burn pop t+27.61
+strict hold  11_near_miss    pops  7 post-burn(>=29.99 s) 0 last pre-burn pop t+26.52
+strict hold  12_Apex         pops  8 post-burn(>=29.99 s) 0 last pre-burn pop t+29.42
+strict hold  13_Apex         pops  8 post-burn(>=29.99 s) 0 last pre-burn pop t+29.42
+strict hold  13_Yaka         pops  7 post-burn(>=29.99 s) 0 last pre-burn pop t+29.90
+strict hold  14_SpaceBerry   pops  7 post-burn(>=29.99 s) 0 last pre-burn pop t+29.08
+strict hold  16_SpaceBerry   pops  9 post-burn(>=29.99 s) 0 last pre-burn pop t+28.02
+strict hold  16_TeamDJ       pops  6 post-burn(>=29.99 s) 0 last pre-burn pop t+25.80
+strict hold  18_Taoyuan      pops  9 post-burn(>=29.99 s) 0 last pre-burn pop t+28.02
+== strict hold: total 80 post-burn 0
+free   hold  10_CoolBa       pops  9 post-burn(>=29.99 s) 0 last pre-burn pop t+28.33
+free   hold  10_SpaceY       pops  8 post-burn(>=29.99 s) 0 last pre-burn pop t+28.39
+free   hold  11_near_miss    pops  9 post-burn(>=29.99 s) 1 last pre-burn pop t+27.74
+free   hold  12_Apex         pops 11 post-burn(>=29.99 s) 1 last pre-burn pop t+27.82
+free   hold  14_SpaceBerry   pops  8 post-burn(>=29.99 s) 0 last pre-burn pop t+27.04
+== free hold: total 45 post-burn 2

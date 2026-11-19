@@ -1,0 +1,16 @@
+ours_strict: per run lost: throttle 38.1, gimbal-cos 1.65, rate-limit 4.39 m/s (steps |want-thr|>0.005: 0.199); clamp-like steps (F_z<1.05 & |F|<0.98a) 0.052, loss 9.02
+    stretch 0.8: share 0.257 mean thr 1.000 lost 0.0 m/s/run
+    stretch 1.0: share 0.542 mean thr 0.905 lost 21.3 m/s/run
+    stretch 1.3: share 0.201 mean thr 0.796 lost 16.8 m/s/run
+ours_free: per run lost: throttle 30.3, gimbal-cos 1.20, rate-limit 5.72 m/s (steps |want-thr|>0.005: 0.201); clamp-like steps (F_z<1.05 & |F|<0.98a) 0.016, loss 2.67
+    stretch 0.8: share 0.316 mean thr 1.000 lost 0.0 m/s/run
+    stretch 1.0: share 0.589 mean thr 0.912 lost 21.5 m/s/run
+    stretch 1.3: share 0.094 mean thr 0.775 lost 8.8 m/s/run
+
+end-of-hop: U_ax by time-to-next-pop (pops in burn); lost impulse per POP and per run
+  their        pops in burn 129: [0,0.25) U=0.909 [0.25,0.5) U=0.900 [0.5,1) U=0.905 [1,1.5) U=0.919 [1.5,2) U=0.919 [2,3) U=0.917 [3,5) U=0.933
+               lost in last 1.5 s: 21.0 m/s/run = 1.79 m/s per pop; time share of last-1.5s window 1.41 s/pop; lost after last in-burn pop 0.3 m/s/run
+  ours_strict  pops in burn 80: [0,0.25) U=0.887 [0.25,0.5) U=0.826 [0.5,1) U=0.841 [1,1.5) U=0.878 [1.5,2) U=0.908 [2,3) U=0.948 [3,5) U=0.961
+               lost in last 1.5 s: 21.2 m/s/run = 2.92 m/s per pop; time share of last-1.5s window 1.50 s/pop; lost after last in-burn pop 5.4 m/s/run
+  ours_free    pops in burn 104: [0,0.25) U=0.929 [0.25,0.5) U=0.898 [0.5,1) U=0.856 [1,1.5) U=0.898 [1.5,2) U=0.948 [2,3) U=0.974 [3,5) U=0.996
+               lost in last 1.5 s: 21.3 m/s/run = 2.25 m/s per pop; time share of last-1.5s window 1.47 s/pop; lost after last in-burn pop 4.5 m/s/run

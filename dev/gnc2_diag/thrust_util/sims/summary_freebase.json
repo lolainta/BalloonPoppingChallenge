@@ -1,0 +1,57 @@
+[
+ {
+  "name": "10_CoolBa",
+  "variant": "freebase",
+  "pops": 9
+ },
+ {
+  "name": "10_SpaceY",
+  "variant": "freebase",
+  "pops": 8
+ },
+ {
+  "name": "11_Mochi",
+  "variant": "freebase",
+  "pops": 9
+ },
+ {
+  "name": "11_near_miss",
+  "variant": "freebase",
+  "pops": 9
+ },
+ {
+  "name": "12_Apex",
+  "variant": "freebase",
+  "pops": 11
+ },
+ {
+  "name": "13_Apex",
+  "variant": "freebase",
+  "pops": 11
+ },
+ {
+  "name": "13_Yaka",
+  "variant": "freebase",
+  "pops": 9
+ },
+ {
+  "name": "14_SpaceBerry",
+  "variant": "freebase",
+  "pops": 8
+ },
+ {
+  "name": "16_SpaceBerry",
+  "variant": "freebase",
+  "pops": 11
+ },
+ {
+  "name": "16_TeamDJ",
+  "variant": "freebase",
+  "pops": 9
+ },
+ {
+  "name": "18_Taoyuan",
+  "variant": "freebase",
+  "pops": 11
+ }
+]

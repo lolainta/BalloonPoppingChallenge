@@ -1,0 +1,22 @@
+=== their first balloon: release time vs launch, rocket-balloon distance at release, time from release to pop ===
+name              b rel-launch |  their: dist@rel  pop-rel  alt@pop | strict: dist@rel pop-rel alt@pop  targets before release (idx:s)
+10_CoolBa        77      -1.02 |      nan     9.41     56.6 |      nan     8.60     52.1  -1:0.0 77:0.02 |
+10_SpaceY        19       1.44 |     14.5     2.05     11.9 |     16.4     2.07     12.2  -1:0.0 46:0.02 |
+11_Mochi         50      -0.02 |      nan     7.53     44.7 |      nan     7.05     42.2  -1:0.0 50:0.02 |
+11_near_miss     63       0.48 |     10.5     4.77     28.0 |     10.5     4.35     25.3  -1:0.0 84:0.02 |
+12_Apex          90       2.98 |      2.0     0.17      1.7 |      9.2     4.39     25.4  -1:0.0 42:0.02 0:0.52 32:2.52 |
+13_Apex          90       2.98 |      2.0     0.17      1.7 |      9.2     4.39     25.4  -1:0.0 42:0.02 0:0.52 32:2.52 |
+13_Yaka          85       3.67 |      5.1     0.35      1.3 |     35.1     3.56     22.8  -1:0.0 81:0.02 |
+14_SpaceBerry    79       1.98 |     10.3     2.01     13.1 |      7.3     4.69     28.8  -1:0.0 78:0.02 4:1.52 |
+16_SpaceBerry    32       2.40 |      4.4     0.85      6.4 |     10.6     2.75     16.8  -1:0.0 42:0.02 0:0.52 57:1.52 |
+16_TeamDJ        50       1.08 |     65.8     5.63     34.5 |     68.8     5.57     33.4  -1:0.0 87:0.02 |
+18_Taoyuan       32       2.30 |      2.7     0.31      2.6 |     10.6     2.75     16.8  -1:0.0 42:0.02 0:0.52 57:1.52 |
+
+=== balloon age (t_pop - t_release) and rocket altitude at pop, all pops ===
+their        n 144  age median  18.7 s  age<3s  11  age<5s  14  pop alt<10m   7  <30m  14  age quartiles [ 9.8 18.7 36.3]
+ours_strict  n  80  age median  20.2 s  age<3s   3  age<5s  11  pop alt<10m   0  <30m  10  age quartiles [10.9 20.2 27.5]
+ours_free    n 105  age median  21.9 s  age<3s   4  age<5s   8  pop alt<10m   0  <30m   8  age quartiles [10.8 21.9 36.7]
+
+=== first-pop delay split by first-balloon distance at launch ===
+close (<45 m) {'their': (8, 3.61), 'ours_strict': (8, 5.91), 'ours_free': (8, 5.32)}
+far (>=45 m) {'their': (3, 7.54), 'ours_strict': (3, 7.05), 'ours_free': (3, 5.67)}

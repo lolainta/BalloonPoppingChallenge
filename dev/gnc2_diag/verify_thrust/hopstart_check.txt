@@ -1,0 +1,6 @@
+their        n=117 T_lb mean 1.82 T_rest mean 2.90 bonus mean +1.08 | closing med 14.7 cos med 0.95 speed med 20.1 | nose-vs-next1s med 12.1 thrust turn med 19.0 (n=118)
+ours_strict  n= 69 T_lb mean 2.49 T_rest mean 2.92 bonus mean +0.43 | closing med 9.7 cos med 0.81 speed med 16.6 | nose-vs-next1s med 26.8 thrust turn med 38.7 (n=69)
+ours_free    n= 90 T_lb mean 2.48 T_rest mean 3.13 bonus mean +0.65 | closing med 9.5 cos med 0.82 speed med 16.8 | nose-vs-next1s med 23.0 thrust turn med 37.4 (n=94)
+s08          n= 31 T_lb mean 3.54 T_rest mean 2.66 bonus mean -0.88 | closing med 6.9 cos med 0.50 speed med 21.6 | nose-vs-next1s med 42.0 thrust turn med 47.8 (n=31)
+fullsat      n= 36 T_lb mean 3.34 T_rest mean 2.74 bonus mean -0.61 | closing med 7.4 cos med 0.55 speed med 21.9 | nose-vs-next1s med 42.7 thrust turn med 54.4 (n=37)
+lead10       n= 76 T_lb mean 2.41 T_rest mean 2.89 bonus mean +0.48 | closing med 10.2 cos med 0.81 speed med 16.7 | nose-vs-next1s med 23.5 thrust turn med 36.3 (n=75)

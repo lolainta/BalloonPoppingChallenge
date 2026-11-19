@@ -1,0 +1,6 @@
+their        n=118 nose-at-pop vs next-1s thrust: median  15.4 deg mean  19.6 | thrust dir change (last 0.5 s before pop -> first 1 s after): median  19.0 deg mean  24.4
+ours_strict  n= 69 nose-at-pop vs next-1s thrust: median  28.5 deg mean  28.4 | thrust dir change (last 0.5 s before pop -> first 1 s after): median  38.3 deg mean  37.7
+ours_free    n= 94 nose-at-pop vs next-1s thrust: median  25.9 deg mean  22.0 | thrust dir change (last 0.5 s before pop -> first 1 s after): median  39.9 deg mean  37.7
+base         n= 69 nose-at-pop vs next-1s thrust: median  28.5 deg mean  28.4 | thrust dir change (last 0.5 s before pop -> first 1 s after): median  38.3 deg mean  37.7
+lead10       n= 75 nose-at-pop vs next-1s thrust: median  24.4 deg mean  26.3 | thrust dir change (last 0.5 s before pop -> first 1 s after): median  35.8 deg mean  34.7
+lead05       n= 76 nose-at-pop vs next-1s thrust: median  30.0 deg mean  29.3 | thrust dir change (last 0.5 s before pop -> first 1 s after): median  38.4 deg mean  39.0

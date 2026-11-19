@@ -1,0 +1,5 @@
+# B3: eob_pick on seeds 10002 / 10003 (+ off reference for 10002), and a forcing radius on 10000
+B_eob_pick ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10002 eob_pick=1
+B_eob_pick ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10003 eob_pick=1
+B_eob_pick_r40 ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 eob_pick=1 eob_pick_r=40
+B_off ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10002

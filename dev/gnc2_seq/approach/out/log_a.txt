@@ -1,0 +1,12 @@
+[appr] seed 46004: best 12 greedy 10 finished [10, 12, 12, 12, 12] legs 376  591.1s
+[appr] seed 46005: best 11 greedy 11 finished [11, 11, 11, 11, 11, 11] legs 352  591.8s
+[appr] seed 46006: best 11 greedy 11 finished [11, 11, 11, 11] legs 376  592.2s
+remaining 41 seeds
+[appr] seed 46009: best 10 greedy 10 finished [10, 10, 10, 10] legs 264  562.0s
+[appr] seed 46008: best 10 greedy 10 finished [10, 10, 10, 10] legs 304  563.5s
+[appr] seed 46007: best 11 greedy 10 finished [10, 10, 10, 10, 10, 11, 11] legs 344  568.5s
+remaining 38 seeds
+[appr] seed 46012: best 11 greedy 11 finished [11, 11, 11, 11] legs 408  613.8s
+[appr] seed 46010: best 11 greedy 9 finished [9, 11, 11, 11, 11] legs 352  615.8s
+[appr] seed 46011: best 10 greedy 10 finished [10, 10, 10, 10, 10] legs 368  615.8s
+remaining 35 seeds

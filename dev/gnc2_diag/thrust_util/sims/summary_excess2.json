@@ -1,0 +1,93 @@
+[
+ {
+  "name": "10_CoolBa",
+  "variant": "excess2",
+  "pops": 1,
+  "pops_burn": 1,
+  "hops": [
+   7.47
+  ]
+ },
+ {
+  "name": "10_SpaceY",
+  "variant": "excess2",
+  "pops": 2,
+  "pops_burn": 2,
+  "hops": [
+   3.48,
+   6.11
+  ]
+ },
+ {
+  "name": "11_Mochi",
+  "variant": "excess2",
+  "pops": 1,
+  "pops_burn": 1,
+  "hops": [
+   6.87
+  ]
+ },
+ {
+  "name": "11_near_miss",
+  "variant": "excess2",
+  "pops": 2,
+  "pops_burn": 2,
+  "hops": [
+   4.5,
+   3.93
+  ]
+ },
+ {
+  "name": "12_Apex",
+  "variant": "excess2",
+  "pops": 0,
+  "pops_burn": 0,
+  "hops": []
+ },
+ {
+  "name": "13_Apex",
+  "variant": "excess2",
+  "pops": 0,
+  "pops_burn": 0,
+  "hops": []
+ },
+ {
+  "name": "13_Yaka",
+  "variant": "excess2",
+  "pops": 0,
+  "pops_burn": 0,
+  "hops": []
+ },
+ {
+  "name": "14_SpaceBerry",
+  "variant": "excess2",
+  "pops": 1,
+  "pops_burn": 1,
+  "hops": [
+   6.58
+  ]
+ },
+ {
+  "name": "16_SpaceBerry",
+  "variant": "excess2",
+  "pops": 0,
+  "pops_burn": 0,
+  "hops": []
+ },
+ {
+  "name": "16_TeamDJ",
+  "variant": "excess2",
+  "pops": 1,
+  "pops_burn": 1,
+  "hops": [
+   6.39
+  ]
+ },
+ {
+  "name": "18_Taoyuan",
+  "variant": "excess2",
+  "pops": 0,
+  "pops_burn": 0,
+  "hops": []
+ }
+]

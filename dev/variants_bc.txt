@@ -1,0 +1,2 @@
+policy_path=runs/bc_only.npz use_sl=0
+policy_path=runs/bc_only.npz use_sl=0 search_k=4

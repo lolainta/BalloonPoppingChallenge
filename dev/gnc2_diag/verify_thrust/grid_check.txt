@@ -1,0 +1,7 @@
+TGO in [0.1,0.35) n=  388 |F|/a mean 0.867 throttle mean 0.844  grid-rounding expectation 0.674
+TGO in [0.35,0.55) n= 1150 |F|/a mean 0.795 throttle mean 0.770  grid-rounding expectation 0.796
+TGO in [0.55,1.05) n= 3276 |F|/a mean 0.847 throttle mean 0.823  grid-rounding expectation 0.879
+TGO in [1.05,1.55) n= 3769 |F|/a mean 0.921 throttle mean 0.905  grid-rounding expectation 0.925
+TGO in [1.55,2.05) n= 3648 |F|/a mean 0.955 throttle mean 0.951  grid-rounding expectation 0.945
+TGO in [2.05,3.05) n= 2995 |F|/a mean 0.954 throttle mean 0.948  grid-rounding expectation 0.959
+TGO in [3.05,5.05) n= 1122 |F|/a mean 0.951 throttle mean 0.944  grid-rounding expectation 0.974

@@ -1,0 +1,1186 @@
+[
+ {
+  "key": "thrust",
+  "finding": {
+   "hypothesis": "THRUST MAGNITUDE UTILIZATION: we lose hop time because the throttle sits below max (stretch > 1, _saturate, throttle rate limits) or thrust goes to hovering. Mass flow is fixed, so any impulse not used is gone for good.",
+   "verdict": "not_supported",
+   "seconds_per_hop": 0.04,
+   "claims": [
+    {
+     "claim": "The premise holds in the simulator: throttle scales thrust but not mass flow, so any throttle below 1 is lost impulse. Gimbal lateral force is not scaled by thrust (thrust1 = -sin(gimbal)), so gimbal only costs a cosine loss on axial thrust.",
+     "value_ours": "our gimbal-cosine loss is 1.6 m/s per run (strict), out of 397 m/s available",
+     "value_theirs": "n/a (same simulator)",
+     "how_measured": "Read ActiveRocketPy/rocketpy/simulation/flight.py (~L2140-2170: effective_thrust = net_thrust*throttle; mass_flow_rate.get_value_opt(t)). a_max(tau) = 1.0097*1080/(90.89 - 0.587 tau), checked on our throttle==1 samples: median ratio 1.0097, p5-p95 1.002-1.025, n=20115 (checks.py)."
+    },
+    {
+     "claim": "Mean thrust utilization during the burn is about the same for both teams. They also throttle down.",
+     "value_ours": "strict: U mean 0.906, median 0.961, 55.6% of burn above 0.95, 16.0% below 0.8. free: 0.929 / 0.972 / 61.8% / 11.0%",
+     "value_theirs": "U mean 0.921, median 0.954, 58.3% of burn above 0.95, 12.7% below 0.8",
+     "how_measured": "U = |dv/dt - G - drag_est| / a_max(tau), central differences of the logged velocity, 0.2 s < tau < 29.95 s, time-weighted over 11 runs (util_analysis.py -> util_summary.txt)."
+    },
+    {
+     "claim": "Lost impulse per run differs by only about 6 m/s out of 397 m/s available (1.5 percentage points).",
+     "value_ours": "strict 38.8 m/s lost per run, 358 m/s used; free 29.8 lost, 368 used",
+     "value_theirs": "32.6 m/s lost per run, 365 m/s used",
+     "how_measured": "Sum of (a_max - |f_thr|)*dt over the burn, averaged per run (util_summary.txt)."
+    },
+    {
+     "claim": "Gravity takes the same share of thrust for both teams, and the horizontal impulse is almost identical.",
+     "value_ours": "strict: integral of f_z = 297 m/s against a gravity offset of 292; integral of |f_h| = 167 m/s; mean |f_h| 5.61 m/s^2; net vertical +4.6 m/s",
+     "value_theirs": "integral of f_z = 295 m/s against 292; integral of |f_h| = 173 m/s; mean |f_h| 5.82 m/s^2; net vertical +1.9 m/s",
+     "how_measured": "impulse_split.py and util_summary.txt: about 74% of the available impulse only offsets gravity for both teams."
+    },
+    {
+     "claim": "Where our strict-mode throttle loss comes from: the 1.3 speed level and throttle drops at the end of each hop at level 1.0. Rate limit, gimbal and clamp losses are small.",
+     "value_ours": "stretch 1.3: 20.1% of burn, mean throttle 0.818, 16.7 m/s/run. Stretch 1.0: 54.2% of burn, throttle 0.905, 21.1 m/s/run; at 0-1 s before the pop the throttle falls to 0.78-0.87 because t_go is rounded up to the 0.1 s grid and ZEM shrinks. Stretch 0.8: 25.7% of burn, throttle 1.000, no loss. Throttle rate limit: 4.35 m/s/run, 19.9% of steps. Gimbal cosine: 1.6. The _saturate never-thrust-down clamp is active 5.2% of the burn, mostly after the last reachable pop.",
+     "value_theirs": "their throttle is not recorded",
+     "how_measured": "Logged A[:,3], F, a_thrust and STRETCH, split by level and by time to the next pop (util_summary.txt, phase.txt)."
+    },
+    {
+     "claim": "Both teams throttle down about equally near the end of each hop.",
+     "value_ours": "strict: 20.4 m/s/run lost in the last 1.5 s before pops; U = 0.83-0.85 at 0.25-1 s before the pop",
+     "value_theirs": "19.1 m/s/run lost in the last 1.5 s before pops; U = 0.91 at 0.25-1 s before the pop",
+     "how_measured": "phase.py: utilization binned by time to the next pop (phase.txt)."
+    },
+    {
+     "claim": "Hop-time decomposition from exact point-mass bounds: thrust magnitude explains only 0.04 s (mean) of the 1.22 s mean per-hop gap. Most of the gap is the state at hop start and thrust direction.",
+     "value_ours": "strict, 69 non-first hops, means: T_act 3.51 s, T_lb 2.50, magnitude loss (T_mag - T_lb) 0.17, direction/path loss (T_act - T_mag) 0.84. Medians: magnitude 0.14, direction 0.54",
+     "value_theirs": "120 non-first hops, means: T_act 2.29 s, T_lb 1.82, magnitude loss 0.13, direction/path loss 0.33. Medians: magnitude 0.03, direction 0.19",
+     "how_measured": "For each hop, the minimum time T such that the miss (logged balloon trajectory minus the ballistic path from the hop-start state) is within the double integral of a_max (T_lb) or of the realized |f_sp| (T_mag), plus the hit radius. Constant-direction thrust is the maximum-displacement control, so both are true lower bounds (util_analysis.py)."
+    },
+    {
+     "claim": "The 1.3 speed level adds about 0.09 s of magnitude loss on the hops that use it, which is about 0.02 s per hop averaged over all hops.",
+     "value_ours": "hops flown more than 50% at stretch 1.3 (n=15): magnitude loss 0.23 s, U_hop 0.806. Hops with no 1.3 (n=32): 0.14 s, U_hop 0.927",
+     "value_theirs": "n/a",
+     "how_measured": "hop_by_level.py on ours_strict."
+    },
+    {
+     "claim": "Causal test: forcing full thrust makes hops longer and roughly halves the pops. Arrival velocity gets faster but points away from the next target.",
+     "value_ours": "strict mode, 11 replays: base 80 pops, median hop 3.41 s. s08 (always saturated) 42 pops, 4.94 s. fullsat (scale _saturate up to full throttle) 47 pops, 4.24 s. fullsat10 41 pops, 6.18 s. excess2 (excess along velocity) 8 pops. s10 (stretch 1.0 only) 66 pops, 3.62 s. noclamp 80 pops, 3.35 s (no effect). With s08: U 0.999, relative speed at hit 20.6 vs 12.1 m/s, cos(v_rel, LOS to next target) at hop start 0.50 vs 0.81, velocity bonus -0.90 vs +0.43 s",
+     "value_theirs": "they arrive at 20.1 m/s with cos 0.95 and a velocity bonus of +1.09 s",
+     "how_measured": "sim_variants.py (a Teacher subclass that follows their pop order; base reproduces data/gnc2/ours_strict exactly), eval_sims.py, hop_start.py -> sims_eval.txt, sims_hopstart.txt."
+    },
+    {
+     "claim": "Their real advantage is where the velocity points at the pop: they are already flying and pointing toward the next balloon. This is outside the magnitude hypothesis.",
+     "value_ours": "strict: T_lb starting at rest relative to the balloon minus T_lb from the actual start = +0.43 s. Closing speed at hop start 9.7 m/s, cos 0.81, speed 16.6 m/s. Nose at the pop is 28.5 deg (median) from the thrust flown in the next 1 s; thrust direction turns 38.3 deg across the pop",
+     "value_theirs": "+1.09 s; closing speed 14.7 m/s, cos 0.95, speed 20.1 m/s; nose 15.4 deg; thrust direction turns 19.0 deg",
+     "how_measured": "hop_start.py, prealign.py (hop_start.txt, prealign.txt). The velocity-bonus difference (0.66 s) explains most of the T_lb gap (0.68 s)."
+    },
+    {
+     "claim": "Terminal lead-out: using the unused thrust in the last 0.5-1 s of a hop to push toward the known next target cuts hop time, but through direction rather than magnitude.",
+     "value_ours": "strict: lead10 88 pops (+8, no replay worse), median hop 3.08 s (-0.33), mean 3.15 (-0.36), direction loss 0.84 -> 0.52, U only 0.906 -> 0.914. lead05 87 pops, 3.10 s. lead15 83 pops, 3.09 s median but misses more (in-burn pops 80 -> 78). lead10f (also fills to full magnitude) 81 pops, 3.23 s",
+     "value_theirs": "n/a",
+     "how_measured": "sim_lead.py: in _spend_excess, if t_go*stretch <= T_LEAD, add k*d_next with |f + k d| <= a_thrust and k <= 2*delta/t_go^2, delta 0.7 m; d_next = normalized (2 ZEM_next/t2^2 - G) from the current target's arrival point; next = their next alive balloon (sims_lead_eval.txt)."
+    },
+    {
+     "claim": "Lead-out does not help with a naive next-target predictor in free mode. The min-reach-time guess rarely matches the balloon actually chased next.",
+     "value_ours": "free: freelead10 103 pops vs 105 (95 vs 104 in burn); median hop 2.53 vs 2.58 s but mean 2.93 vs 2.76 s. The predicted next target matches the one our policy actually chases next in 12/38 = 32% of pops",
+     "value_theirs": "their actual next balloon matches the min-reach guess in 25/69 = 36% of pops (not the nearest-reach choice)",
+     "how_measured": "sim_lead_free.py (freebase reproduces ours_free: 105 pops), next_match.py (sims_free_eval.txt, next_match.txt)."
+    }
+   ],
+   "fixes": [
+    {
+     "change": "Do not make 'always full throttle' or excess dumping a GNC v2 goal. Keep throttle-down as the arrival-speed control until the guidance also controls which way the arrival velocity points. Leave the _saturate downward clamp as is (noclamp: 80 vs 80 pops).",
+     "expected_effect": "Avoids the measured losses: -14 to -72 pops out of 80 in strict mode for s10/s08/fullsat/fullsat10/excess2.",
+     "risk": "None (keeps the current behaviour). Ruling out max-throttle variants is based on a fixed, co-adapted policy, but the harm comes from misaligned arrival velocity at the GNC level (cos 0.81 -> 0.50), which the policy's target choice cannot fix."
+    },
+    {
+     "change": "Terminal lead-out in GNC v2, active only when the planner has committed the next target: when t_go*stretch <= 0.5-1.0 s, f <- f + k*d_next with |f + k d_next| <= a_thrust, k <= 2*0.7 m / t_go^2, and d_next = normalized (2*ZEM_next/t2^2 - G) from the current target's arrival point and time. No extra fill to full magnitude.",
+     "expected_effect": "Strict mode (next target known): +7 to +8 pops over 11 replays (+9-10%), median hop -0.31 to -0.33 s, no replay worse. Nose alignment at the pop improves from 28.5 to 24.4 deg.",
+     "risk": "Medium. It needs a policy or DP output that commits to two targets; with a min-reach-time guess it loses 2 pops (the guess is right only 32% of the time). A larger window or delta (lead15) starts causing misses. The policy must be retrained or fine-tuned around it."
+    },
+    {
+     "change": "The real lever lies outside this hypothesis: shape the exit velocity. Use guidance with a terminal-velocity constraint (e.g. a = 6*ZEM/t^2 - 2*ZEV/t) with the desired hit velocity pointed at the next target, and pre-rotate the attitude before the pop.",
+     "expected_effect": "Up to about 0.6 s/hop (velocity-bonus gap 1.09 vs 0.43 s) plus part of the 0.51 s/hop direction/path gap.",
+     "risk": "High. It needs a two-leg planner, may raise the miss rate, and needs the policy re-co-adapted."
+    },
+    {
+     "change": "Minor clean-up: interpolate the reach time instead of taking the next point on the 0.1 s grid, so stretch 1.0 really commands full thrust near the end of a hop.",
+     "expected_effect": "At most about 0.05 s/hop. The magnitude loss at stretch 1.0 is 21 m/s/run, but full-thrust tests show magnitude is not binding.",
+     "risk": "Low. It changes flight slightly, so the co-adapted policy may lose a little. Low priority."
+    }
+   ],
+   "scripts": [
+    "./dev/gnc2_diag/thrust_util/util_analysis.py",
+    "./dev/gnc2_diag/thrust_util/checks.py",
+    "./dev/gnc2_diag/thrust_util/explore_amax.py",
+    "./dev/gnc2_diag/thrust_util/phase.py",
+    "./dev/gnc2_diag/thrust_util/impulse_split.py",
+    "./dev/gnc2_diag/thrust_util/hop_start.py",
+    "./dev/gnc2_diag/thrust_util/hop_by_level.py",
+    "./dev/gnc2_diag/thrust_util/prealign.py",
+    "./dev/gnc2_diag/thrust_util/next_match.py",
+    "./dev/gnc2_diag/thrust_util/sim_variants.py",
+    "./dev/gnc2_diag/thrust_util/sim_lead.py",
+    "./dev/gnc2_diag/thrust_util/sim_lead_free.py",
+    "./dev/gnc2_diag/thrust_util/eval_sims.py",
+    "./dev/gnc2_diag/thrust_util/util_summary.txt",
+    "./dev/gnc2_diag/thrust_util/sims_eval.txt",
+    "./dev/gnc2_diag/thrust_util/sims_hopstart.txt",
+    "./dev/gnc2_diag/thrust_util/sims_lead_eval.txt",
+    "./dev/gnc2_diag/thrust_util/sims_free_eval.txt",
+    "./dev/gnc2_diag/thrust_util/prealign.txt",
+    "./dev/gnc2_diag/thrust_util/phase.txt"
+   ],
+   "caveats": "- **Their utilization is inferred:** it comes from dv/dt (their throttle is not recorded). a_max is calibrated on our throttle==1 samples (x1.0097). The drag estimate uses ground-relative speed and ignores wind, an error of about 0.1 m/s^2 at most. 59 of their burn samples show |f_sp|/a_max > 1.05 (spikes, max 1.09).\n- **The bounds are idealized:** T_lb and T_mag assume a point mass with instant attitude and no drag. They use the logged balloon trajectory and the actual distance at the pop as the hit radius. The 0.04 s/hop figure is the mean difference in magnitude loss (0.17 vs 0.13 s); on medians it is 0.11 s (0.14 vs 0.03). Either way it is 3-9% of the roughly 1.2 s gap.\n- **The replays are not independent:** the 11 replays use only 5 distinct seeds (seed 0 x4, seed 1957083 x4, plus 14, 1362 and 205). Launch times and target orders differ, so the flights differ, but they are not independent samples. Each sim is a single deterministic run, so the +8 pops for lead-out is a direct measurement, not a statistical estimate. On the per-replay sign test it is 7 better / 4 equal / 0 worse.\n- **The policy is fixed:** every sim uses the fixed, co-adapted policy (runs/s4bw4/rl3_policy_25478400.npz). In strict mode it only picks speed levels, but a retrained policy could change the full-thrust results. The failure mechanism (misaligned arrival velocity, cos 0.81 -> 0.50) is at the GNC level, though.\n- **Lead-out's strict-mode gain needs a committed next target:** strict-mode lead-out uses their known next target, which a live policy would not have. The free-mode test with a min-reach-time guess lost 2 pops.\n- **First hop:** the launch-to-first-pop gap (median 6.66 vs 3.98 s in strict) is not a magnitude problem either: U during the first hop is 0.97 for us and magnitude loss is 0.03 s median. It is direction/launch loss (3.37 s median).\n- **Disk use:** the sim logs in dev/gnc2_diag/thrust_util/sims/ take about 1.3 GB (full balloon arrays) and can be deleted once the summaries are no longer needed. No existing files were modified. At most 4 processes were used."
+  },
+  "verdict": {
+   "checks": [
+    {
+     "claim": "Premise: throttle scales thrust but not mass flow, and gimbal lateral force is not scaled by thrust, so gimbal only costs a cosine loss (1.6 m/s per run out of 397).",
+     "status": "CONFIRMED",
+     "corrected_value": "Gimbal cosine loss is 1.65 m/s/run (strict) and 1.20 (free), out of 398.7 m/s available.",
+     "note": "Read flight.py L2141-2171. The code uses effective_thrust = net_thrust*throttle and mass_flow_rate.get_value_opt(t) (depends on time only). thrust1/2 = -/+sin(gimbal), which is not multiplied by thrust. I also checked the quaternion convention: the measured f_sp lies along the body z axis from R[6:10], median angle 1.5-6 deg for both teams, so thrust really acts along the nose. I refit a_max from our throttle==1 samples using the axial projection plus drag along -body z (RocketPy R3 is axial): m/T = 0.08363 - 0.000576*tau. This agrees with the finding's 1.0097*1080/(90.89-0.587 tau) to within -0.5% to +1.7% across tau bins. On our runs the axial inferred U matches the exact throttle*cos(gimbal) to within 0.0002 on average (verify_thrust/util.py)."
+    },
+    {
+     "claim": "Mean burn utilization is about the same for both teams (their U 0.921 mean, 0.954 median, 58.3% of burn >0.95, 12.7% <0.8; strict 0.906/0.961/55.6%/16.0%).",
+     "status": "CONFIRMED",
+     "corrected_value": "Axial estimator (mean / median / >0.95 / <0.8): their 0.916/0.968/56.7%/13.3%; strict 0.903/0.960/54.4%/16.5%; free 0.925/0.972/60.1%/11.7%. On the 9 distinct strict flights: 0.898.",
+     "note": "Independent estimator: forward differences, f_sp projected on the nose, drag along the body axis, my own a_max fit. The difference between teams is 1.3 percentage points."
+    },
+    {
+     "claim": "Lost impulse per run differs by only about 6 m/s out of 397 (their 32.6, strict 38.8, free 29.8).",
+     "status": "CONFIRMED",
+     "corrected_value": "Their 34.8, strict 40.1, free 31.7 m/s/run out of 398.7. The difference is 5.3 m/s (1.3 percentage points).",
+     "note": "Sum over the burn of (a_max - axial thrust accel)*dt."
+    },
+    {
+     "claim": "Gravity takes the same share of thrust (integral of f_z 297 vs 295 against 292; integral of |f_h| 167 vs 173).",
+     "status": "CONFIRMED",
+     "corrected_value": "Integral of thrust z: strict 299.5, their 296.0, against gravity 291.8. Integral of thrust |h|: strict 166.1, their 171.7 m/s/run.",
+     "note": "Axial thrust times the nose components. About 73% of the available impulse goes to gravity for both teams."
+    },
+    {
+     "claim": "Sources of our strict throttle loss: stretch 1.3 (20.1% of burn, throttle 0.818, 16.7 m/s/run); stretch 1.0 (54.2%, 0.905, 21.1) with an end-of-hop drop from 0.1 s grid rounding; rate limit 4.35 m/s/run on 19.9% of steps; gimbal 1.6; clamp active 5.2%, mostly after the last reachable pop.",
+     "status": "CONFIRMED",
+     "corrected_value": "Stretch 1.3: 20.1% of burn, pooled throttle 0.796, 16.8 m/s/run. Stretch 1.0: 54.2%, 0.905, 21.3. Stretch 0.8: 25.7%, 1.000. Rate limit 4.39 m/s/run, 19.9% of steps. Clamp-like steps 5.2% of burn, of which 54% come after the last in-burn pop.",
+     "note": "Grid rounding checked at stretch 1.0: mean |F|/a_thrust equals the expected (T*/t_grid)^2 within 3% for logged TGO >= 0.35 s (0.795 vs 0.796, 0.847 vs 0.879, 0.921 vs 0.925). 'Mostly after the last pop' is only just true (54%)."
+    },
+    {
+     "claim": "Both teams throttle down about equally near the end of each hop (20.4 vs 19.1 m/s/run lost in the last 1.5 s).",
+     "status": "REFUTED",
+     "corrected_value": "Per run it is equal (21.2 vs 21.0 m/s/run), but we have 80 in-burn pops against their 129. Per pop we lose 2.92 vs 1.79 m/s (1.63x) in the last 1.5 s. U at 0.25-1 s before the pop is 0.826-0.841 for us vs 0.900-0.905 for them, so our deficit is about 1.7x theirs.",
+     "note": "A per-run total hides the per-hop difference, and the finding's own U bins (0.83-0.85 vs 0.91) already contradict 'equal'. The time cost is still small: about 1.1 m/s extra lost per pop, which gives at most about 0.07 s within the hop even if all of it pointed along the approach."
+    },
+    {
+     "claim": "Hop decomposition from point-mass bounds: magnitude explains only 0.04 s (mean) of the 1.22 s gap (strict 69 hops: T_act 3.51, T_lb 2.50, mag 0.17, dir 0.84; their 120: 2.29, 1.82, 0.13, 0.33).",
+     "status": "CONFIRMED",
+     "corrected_value": "Own implementation (exact piecewise-constant double integral, axial thrust for T_mag): strict n=69, T_act 3.51, T_lb 2.49, magL 0.170 mean / 0.140 median, dirL 0.85/0.56. Their n=120: 2.29, 1.81, 0.134/0.030, 0.34/0.19. Mean gap 0.036 s, median gap 0.11 s. Fixed rh=1.5 and a fully-in-burn filter give the same numbers.",
+     "note": "The numbers reproduce. There is no double counting: T_act = T_lb + magL + dirL by construction. However, T_mag only integrates thrust up to T_mag, so the end-of-hop throttle-down, where our per-hop deficit is largest, is booked as direction/path loss. A linearized alternative (unused thrust projected on the approach direction, divided by closing speed at the hit) gives their 0.079 vs our 0.066 on means (-0.01) and 0.005 vs 0.126 on medians (+0.12)."
+    },
+    {
+     "claim": "The 1.3 speed level adds about 0.09 s of magnitude loss on hops that use it (n=15: 0.23 vs 0.14 s), about 0.02 s per hop overall.",
+     "status": "CONFIRMED",
+     "corrected_value": "Hops more than 50% at 1.3 (n=15): magL 0.237 vs 0.129 s on hops with no 1.3, a difference of 0.108 s. Share-weighted over all hops: +0.024 s/hop (strict), +0.009 (free).",
+     "note": "The 1.3 hops are actually shorter (T_act 3.09 vs 3.29 s), which also argues against magnitude being binding."
+    },
+    {
+     "claim": "Causal test: forcing full thrust hurts (s08 42 pops, fullsat 47, fullsat10 41, excess2 8, s10 66, noclamp 80 vs base 80). s08 relative speed at hit 20.6, cos 0.50, velocity bonus -0.90.",
+     "status": "CONFIRMED",
+     "corrected_value": "Recounted from the raw S arrays: base reproduces ours_strict exactly (checksum and pops). s08 42 (10/11 replays worse), fullsat 47 (10/11 worse), fullsat10 41 (11/11 worse), excess2 8, s10 66 (6 worse, 1 better), noclamp 80 (identical per replay). s08: v_rel 20.7, cos 0.50, bonus -0.88 s.",
+     "note": "This shows that naive magnitude filling under the current PN (N=2) guidance with the co-adapted policy hurts. It does not show magnitude is useless under a guidance law that shapes the arrival velocity. noclamp only moves the f_z floor from 1 to 0.5 m/s^2, so it is a weak test of the clamp."
+    },
+    {
+     "claim": "Their real advantage is the velocity direction at the pop: velocity bonus +1.09 vs +0.43 s, closing 14.7 vs 9.7 m/s, cos 0.95 vs 0.81, speed 20.1 vs 16.6, nose-to-next-thrust 15.4 vs 28.5 deg, thrust turn 19.0 vs 38.3 deg.",
+     "status": "CONFIRMED",
+     "corrected_value": "Bonus +1.08 vs +0.43 s (their n=117, ours 69). Closing 14.7 vs 9.7, cos 0.95 vs 0.81, speed 20.1 vs 16.6. Nose vs thrust-weighted nose over the next 1 s: 12.1 vs 26.8 deg. Thrust turn 19.0 vs 38.7 deg. The bonus gap (0.65 s) explains most of the T_lb gap (0.67 s).",
+     "note": "Own T_lb with my a_max fit. The balloon state keeps propagating after the pop, so the rest-start case uses real trajectories. The small nose-angle differences come from my using the nose rather than f_thr (which includes aero normal force)."
+    },
+    {
+     "claim": "Terminal lead-out (strict, their next target known): lead10 88 pops (+8, no replay worse), median hop 3.08 (-0.33), mean 3.15; lead05 87; lead15 83 (in-burn 78); lead10f 81.",
+     "status": "CONFIRMED",
+     "corrected_value": "lead10 88 pops, but only 85 in the burn (+5 in burn, +3 after burnout). Per replay 6 better / 5 equal / 0 worse. The caveat's '7 better / 4 equal' is wrong. Base has two identical pairs (12_Apex=13_Apex, 16_SpaceBerry=18_Taoyuan), so over 9 distinct flights it is 6/3/0. Median hop 3.08, mean 3.13. lead05 87, lead15 83 (78 in burn), lead10f 81 all reproduce.",
+     "note": "The gain is real but small-sample, and it depends on knowing the next target."
+    },
+    {
+     "claim": "Lead-out does not help in free mode with a min-reach-time predictor: 103 vs 105 pops; the prediction matches the actual next target in 12/38 = 32% of pops.",
+     "status": "UNCERTAIN",
+     "corrected_value": "ours_free has only 5 distinct flights: seed 0 appears 4 times and seed 1957083 appears 4 times, as identical flights. On distinct flights freelead10 gets 46 vs 45 pops, and 44 vs 44 in the burn: a null result, not a loss. The 12/38 match count also includes the duplicates.",
+     "note": "The '-2 pops' comes from counting seed 0's -1 four times. Five flights cannot show either help or harm. The finding also missed that ours_strict contains two identical flight pairs."
+    }
+   ],
+   "seconds_per_hop_assessment": "The 0.04 s figure reproduces as the difference of mean bound-based magnitude losses: 0.170 vs 0.134 s, or 0.036 s in my independent run. It is not double-counted with the direction/path term, because the two terms add up to T_act by construction. It is, however, the low end of a plausible range:\n\n- **Medians:** the median gap is 0.11 s.\n- **End-of-hop exclusion:** the bound ignores throttle after T_mag, which is where our per-hop deficit is about 1.7x theirs (2.92 vs 1.79 m/s lost per pop in the last 1.5 s).\n- **Linearized estimate:** projecting the unused impulse on the approach direction gives -0.01 s on means and +0.12 s on medians.\n- **Correlation across hops:** the U_hop vs excess-time slope gives 0.025-0.09 s.\n- **Carry-over:** the extra end-of-hop impulse, turned into next-hop closing speed at the measured bonus sensitivity (about 0.13 s per m/s), gives at most about 0.12 s. The fullsat and lead10f sims suggest this is not realized under the current guidance.\n\nA defensible range is 0-0.12 s/hop, with a generous ceiling around 0.2 s. That is at most about 10-15% of the 1.22 s mean gap, so 'not_supported as a main cause' stands. Stating it as 0.04 (range 0-0.12) would be more accurate.",
+   "overall": "holds",
+   "fix_assessment": "1. **Do not chase full throttle.** This follows from the evidence. s08, fullsat, fullsat10 and excess2 each lose 33-72 pops against a base of 80, and at least 10 of 11 replays get worse; s10 loses 14 pops (6 replays worse, 1 better). Its scope is narrower than stated: it only shows that filling magnitude naively under the current PN guidance with the co-adapted policy hurts. It is not proof that magnitude is useless under a guidance law that controls arrival velocity. 'Leave the clamp' is harmless, but the noclamp test only moves the floor by 0.5 m/s^2.\n\n2. **Terminal lead-out.** Supported only in strict mode: +8 pops, 6/11 replays better, 0 worse. But 3 of the 8 are after burnout, and there are only 9 distinct flights. The free-mode test is a null result on 5 distinct flights (46 vs 45 pops), not a loss of 2. The medium risk and the need for a committed second target are correctly stated. It works through direction, not magnitude.\n\n3. **Terminal-velocity-constrained guidance with a pre-rotated nose.** This is the best-motivated lever: the 0.65 s velocity-bonus gap and the cos 0.95 vs 0.81 difference both reproduce. But '~0.6 s/hop' is a difference of point-mass lower bounds, not a measured hop-time reduction, and it is untested.\n\n4. **Interpolate the reach time.** The mechanism is confirmed: grid rounding reproduces |F|/a within 3% for TGO >= 0.35 s, and the t_go_min=0.3 floor adds to it below that. The expected gain of 0.05 s/hop or less is plausible but untested. Low priority, as the finding says.\n\n**Data issue the finding missed:** ours_strict has two identical flight pairs (12_Apex=13_Apex, 16_SpaceBerry=18_Taoyuan), and ours_free is only 5 distinct flights. That includes the 105-pop headline, which is 45 pops counted with weights. Future A/B tests should report results per distinct flight.\n\n**Where things are:** my scripts and outputs are in ./dev/gnc2_diag/verify_thrust/. Scripts: common.py, util.py, breakdown.py, hops.py, level_check.py, sims_check.py, hopstart_check.py. Outputs: util.txt, breakdown.txt, hops.txt, sims_check.txt, hopstart_check.txt, grid_check.txt, free_distinct.txt, clamp_where.txt."
+  }
+ },
+ {
+  "key": "attitude",
+  "finding": {
+   "hypothesis": "姿態／指向動態（ATTITUDE / POINTING）：換目標後火箭必須先轉向，推力才會朝新的方向，所以 hop 變慢。結論：這個假說只是次要因素。指向相關的成本最多約 0.15 s/hop，而 strict 比他們每跳平均慢 1.22 s（3.51 vs 2.29 s）。在同一套硬體上，現有 GNC 能改的部分不到 0.02–0.08 s/hop。(1) 我們其實轉得比前段班快：燃燒期間 |w_xy| p95 是 1.98 vs 1.55 rad/s；需要大轉向時進到 10° 內花 0.69 vs 1.18 s。(2) 我們的姿態控制律離硬體極限只差約 0.01–0.04 s。硬體限制是：擺角 15°、擺動速率 60°/s（只能慢慢反向）、α_max 約 7–8.6 rad/s²。gain 往上調就變差，甚至發散。(3) 就算把角加速度放大 3.4 倍（物理上做不到），配對比較也只快 −0.06±0.16 s/hop（全部 hop 合併的平均則快 0.13 s）。(4) hop 模型中 strict 的指向成本比他們多 0.22 s/hop。原因是我們在 pop 當下的狀態比較差（要轉 46.5° vs 24.5°），不是姿態迴路慢。落差的主因是 pop 當下的幾何狀態：朝下一顆氣球的接近速度 9.7 vs 14.4 m/s，T_inst 差 0.67 s/hop。另外有一個模擬器特性要知道：擺角只產生力矩，側向力近乎 0，所以推力方向就是機頭軸，擺角本身沒辦法直接偏轉推力。",
+   "verdict": "minor",
+   "seconds_per_hop": 0.15,
+   "claims": [
+    {
+     "claim": "模擬器特性：TVC 擺角只產生力矩，平移方程裡的側向推力只是沒有單位的 sin(擺角)（約 0.26 N），所以推力方向就是機頭軸，擺角本身不偏轉推力",
+     "value_ours": "機體座標側向比力中位數 0.41 m/s²，跟『如果是 T·sin(g)』應有的側向力（中位數 0.51，p90 1.97）相關係數只有 0.29；轉動模型 dw/dt = K·(T/m)·sin(g) 擬合 K = 2.31 1/m，R² 0.96–0.99",
+     "value_theirs": "同一台模擬器，同樣適用",
+     "how_measured": "讀 ActiveRocketPy/rocketpy/simulation/flight.py 的 u_dot（thrust1/2 沒乘推力）；validate.py 用我們記錄的動作對 11 趟 strict 飛行做擬合"
+    },
+    {
+     "claim": "燃燒期間的角速度分佈：我們轉得比他們快、也更常高速轉動",
+     "value_ours": "strict |w_xy| p50/p90/p95/max = 0.36/1.75/1.98/2.41 rad/s；>1.5 rad/s 佔 15% 時間（free：p95 1.85，佔 10%）",
+     "value_theirs": "0.45/1.26/1.55/2.95 rad/s；>1.5 rad/s 佔 6%。各隊 p95 從 0.62（Mochi）到 2.01（SpaceBerry）",
+     "how_measured": "analyze.py：用 R 的機體角速度，範圍是起飛後 0.5 s 到燃燒結束，11 趟合併"
+    },
+    {
+     "claim": "擺角飽和很少：不論哪一方，硬體擺角上限都不是瓶頸",
+     "value_ours": "實際記錄 |tvc| ≥ 14.5° 佔燃燒時間 3.9%（從角加速度推算為 4.3%）；>16°（box 角落）1.5%",
+     "value_theirs": "推算 ≥14° 佔 1.1%；>16° 佔 0.7%",
+     "how_measured": "從 dw/dt/(K·T/m) 推算擺角。在我們的資料上驗證：單軸誤差中位數 0.24°、p95 1.39°；判斷飽和的 precision 0.75、recall 0.82"
+    },
+    {
+     "claim": "每跳開始（前一顆 pop 當下）時，機頭跟『事後回推方向』的夾角，以及轉到 20°/10° 內所需時間。事後回推方向 = 能在實際 pop 時間剛好打中的定值比力",
+     "value_ours": "strict：夾角中位數 25.6°，t20 0.28 s，t10 0.73 s；需要 >30° 大轉向的跳佔 28/69（41%），這些跳 t10 0.69 s，約 47.6°/s，峰值 |w| 2.0（free：21.3°，t10 0.29 s）",
+     "value_theirs": "14.6°，t20 0.01 s，t10 0.33 s；大轉向只佔 21/116（18%），但他們轉得更慢：t10 1.18 s，約 27.6°/s，峰值 1.62",
+     "how_measured": "analyze.py hop_metrics：f_h = 2(pb(t_pop) − p − v·τ)/τ² − G，只取 τ ≥ 0.3 s；不含第一跳"
+    },
+    {
+     "claim": "我們機頭跟 GNC 想要的比力 F 之間的夾角（只有我們有 F）",
+     "value_ours": "strict：中位數 7.7°，32% 的導引時間 >20°，推力效率 Σ|F|cos/Σ|F| = 0.879；損失推力 ∫|F|(1−cos) = 每趟 42.8 m/s（free：5.2°、25%、0.920、29.0 m/s）",
+     "value_theirs": "無（他們的 F 沒有記錄）",
+     "how_measured": "analyze.py 第 4 節、phases.py"
+    },
+    {
+     "claim": "夾角 >20° 的時間發生在哪個階段（strict）",
+     "value_ours": "換目標後 1 s 內佔 50%（損失推力佔 50%）；pop 前最後 0.5 s 佔 23%（損失推力佔 27%）；其餘 hop 中段佔 27%。pop 前最後 0.5 s 裡，F 本身的轉速中位數 284°/s，65% 的時間超過 2.5 rad/s 上限，追不上",
+     "value_theirs": "無",
+     "how_measured": "phases.py，把 11 趟 strict 的導引步數按階段拆開"
+    },
+    {
+     "claim": "換目標後重新指向的延遲，以 F 為基準、只看需要 >30° 的事件",
+     "value_ours": "strict：t20 0.49 s，t10 0.80 s（p90 1.88），峰值 |w| 2.04 rad/s，n = 64（free：t20 0.58、t10 0.79）",
+     "value_theirs": "無；以事後回推方向為基準的可比數字見上一項（大轉向 t10 1.18 s）",
+     "how_measured": "analyze.py 第 6 節：TGT 改變後，第一次夾角 < 20°/10° 的時間"
+    },
+    {
+     "claim": "現行控制律離硬體最佳只差一點（平面閉迴路模擬，含 15° 擺角、60°/s 擺動速率、延遲一步）",
+     "value_ours": "現行 k_att 3 / max_rate 2.5 / k_rate 10：20–135° 轉向平均 t10 0.76 s、收斂到 5° 內 0.96 s；90° 轉向 t10 0.94 s",
+     "value_theirs": "掃描出的最佳 sqrt 律（a_dec 2.5、max_rate 4、k 6、k_rate 12）：t10 0.72 s、收斂 0.79 s；90° 轉向 t10 0.91 s。S 曲線理論下限：90° 停穩約 1.19 s",
+     "how_measured": "tune_fast.py 網格搜尋：線性律 100 組 + sqrt 律 576 組，限制超調 ≤ 5°"
+    },
+    {
+     "claim": "hop 到達時間模型拆解（質點、全推力、從 pop 當下狀態出發、打中半徑 1.5 m），都是各 hop 的平均",
+     "value_ours": "strict：實際 3.51 s，T_inst 2.50 s，指向成本 T_turn(我們的律) − T_inst = 0.387 s（中位數 0.29），換成最佳律只省 0.014 s，剩餘執行損失 0.465 s，要轉到最佳方向的角度 46.5°（free：指向成本 0.122 s，換律省 0.003 s）",
+     "value_theirs": "實際 2.29 s，T_inst 1.83 s，用我們的轉向動態飛他們的狀態，指向成本 0.169 s（中位數 0.03），換律省 0.010 s，剩餘 0.275 s，轉向角 24.5°",
+     "how_measured": "hopmodel.py：在 0.5° 間隔的每個轉向角 Θ，對圓錐面上的最佳終點方向求精確解；T_inst 用解析式"
+    },
+    {
+     "claim": "實際模擬（strict 順序），各姿態變體相對 base 的配對差異：每跳秒數 ± SE（10 個獨立 replay）",
+     "value_ours": "base：80 顆，平均 hop 3.51 s。katt2_mr1.5 +0.38±0.38（每 replay 少 0.8 顆）；katt4_mr3 +0.135±0.065；mr4 +0.11±0.08；katt5_mr4_kr15 11/11 全部墜毀（共 7 顆）；sqrt −0.07±0.27；sqrt_c +0.04±0.05；box −0.04±0.06（顆數相同）；ff +0.91±0.20（每 replay 少 1.8 顆）；sqrt_box_ff 振盪（22 顆）；hold05 −0.08±0.08（82 顆）",
+     "value_theirs": "他們的平均 hop 2.29 s（參考用）",
+     "how_measured": "sim.py（subclass Teacher，SLACK=inf，最多 4 個 process）；simsum.py、paired.py 以『第 1 到第 n 顆 pop 的時間差 / (n−1)』做配對比較"
+    },
+    {
+     "claim": "上限測試：假如轉動加速度變成 3.4 倍（轉動慣量 /4、增益放大；物理上做不到）",
+     "value_ours": "fast_physics：80 → 87 顆（燃燒期間 80 → 83），平均 hop 3.51 → 3.38，中位數 3.41 → 3.24；配對 −0.06±0.16 s/hop；對 F 的夾角 >20° 從 32% 降到 23%",
+     "value_theirs": "他們的 hop 2.29 s，這個上限測試離他們還是差約 1.1 s",
+     "how_measured": "sim.py fast_physics；fitk.py 量到 K = 8.0 vs 2.33"
+    },
+    {
+     "claim": "pop 當下的狀態：我們機頭轉得更快、較沒對準下一段方向、朝下一顆的接近速度也較低",
+     "value_ours": "strict：pop 時 |w| 1.58 rad/s（p90 1.92）；機頭跟下一段方向夾 26°；速度方向跟下一顆夾 24°；接近速度 9.7 m/s（free：1.48 rad/s、26°、27°、9.5 m/s）",
+     "value_theirs": "0.64 rad/s；14.5°；14.4°；14.4 m/s。兩方都有 19% 的 pop 當下正在轉離下一段方向",
+     "how_measured": "prepoint.py、firsthop.py"
+    },
+    {
+     "claim": "pop 前把姿態固定住（hold05），pop 時的角速度就降到跟他們一樣，但幾乎沒省到時間",
+     "value_ours": "pop 時 |w| 中位數 1.50 → 0.62 rad/s；−0.08±0.08 s/hop；顆數 80 → 82（沒有漏打）",
+     "value_theirs": "pop 時 |w| 0.64 rad/s",
+     "how_measured": "sim.py hold05：目標的最短抵達時間 < 0.5 s 時，令 w_cmd = 0"
+    },
+    {
+     "claim": "起飛到第一顆慢，不是指向問題",
+     "value_ours": "strict 起飛 → 第一顆中位數 6.67 s；起飛時需要轉的角度約 10°，t10 ≈ 0；各姿態變體中位數 Δ = 0.00 s",
+     "value_theirs": "3.99 s；起飛時需要轉的角度約 10°",
+     "how_measured": "firsthop.py、paired.py 的 d first 欄"
+    },
+    {
+     "claim": "油門使用差不多（不是這個假說的差異來源）",
+     "value_ours": "strict：平均油門 0.904，≥0.97 佔 45%",
+     "value_theirs": "0.914，≥0.97 佔 48%",
+     "how_measured": "T/m 除以全推力加速度 a_full(τ)（從我們油門 > 0.98 的記錄查表）；analyze.py"
+    }
+   ],
+   "fixes": [
+    {
+     "change": "姿態迴路維持 k_att 3 / max_rate 2.5 / k_rate 10，不要再調快。擺動速率 60°/s 加上延遲一步，已經把內迴路頻寬壓在約 5.4 1/s",
+     "expected_effect": "0。量到的結果：katt4_mr3 +0.135±0.065 s/hop，mr4 +0.11，katt5_mr4_kr15 全部墜毀",
+     "risk": "沒有。這一項就是在避開風險"
+    },
+    {
+     "change": "（可選）擺角限制改成每軸各自 ±15°（box），取代現在的向量長度 ≤15°",
+     "expected_effect": "−0.04±0.06 s/hop，顆數不變。燃燒期間擺角只有約 4% 的時間飽和，所以效果很小",
+     "risk": "低：box 角落時軸向推力多損失約 cos 7%；需要在 free policy 和 scenario 4 驗證"
+    },
+    {
+     "change": "終端段不再追 F：目標的最短抵達時間 < 0.5 s 時令 w_cmd = 0（hold05）。可以再延伸成打中確定之後，先轉向下一顆（需要 policy 在 pop 前就決定下一顆）",
+     "expected_effect": "hold05 實測 −0.08±0.08 s/hop、多 2/80 顆，pop 時 |w| 降到 0.62（跟他們一樣）。預先轉向的上限是把指向成本全部省掉：free 0.12 s/hop、strict 0.39 s/hop",
+     "risk": "可能擦身而過：pop 前 0.3 s 內橫向位移約 0.6 m，打中半徑 1.5 m。11 趟 strict 沒有漏打，但還沒用 free policy 和 scenario 4 陣風測過"
+    },
+    {
+     "change": "不要加『導引方向變化率』前饋（ff）",
+     "expected_effect": "避免 +0.91±0.20 s/hop、每 replay 少 1.8 顆",
+     "risk": "無"
+    },
+    {
+     "change": "GNC v2 的主力從姿態迴路移開，改做 pop 當下的狀態塑形：讓打中當下的速度朝向下一顆（雙目標終端導引，或在 pop 前就規劃下一段）",
+     "expected_effect": "這部分不在本假說範圍內。hop 模型顯示 T_inst（幾何）差 0.67 s/hop，接近速度 9.7 vs 14.4 m/s，是落差的最大來源",
+     "risk": "高：需要重練 policy 或改規劃器，也可能犧牲命中率"
+    },
+    {
+     "change": "如果反正要用新 GNC 重練，可以把外迴路換成 sqrt 律（a_dec 2.5、k_lin 4–6、max_rate 3.5–4、k_rate 10–12，不加前饋）",
+     "expected_effect": "hop 模型只省 0.003–0.014 s/hop；實測 sqrt_c +0.04±0.05、sqrt −0.07±0.27，都在雜訊內。不值得單獨做",
+     "risk": "中：比較積極的版本（k_lin 8 加 box 加前饋）會振盪（22 顆）"
+    }
+   ],
+   "scripts": [
+    "./dev/gnc2_diag/attitude/common.py",
+    "./dev/gnc2_diag/attitude/validate.py",
+    "./dev/gnc2_diag/attitude/analyze.py",
+    "./dev/gnc2_diag/attitude/hopmodel.py",
+    "./dev/gnc2_diag/attitude/tune_fast.py",
+    "./dev/gnc2_diag/attitude/prepoint.py",
+    "./dev/gnc2_diag/attitude/phases.py",
+    "./dev/gnc2_diag/attitude/firsthop.py",
+    "./dev/gnc2_diag/attitude/sim.py",
+    "./dev/gnc2_diag/attitude/simsum.py",
+    "./dev/gnc2_diag/attitude/paired.py",
+    "./dev/gnc2_diag/attitude/fitk.py",
+    "./dev/gnc2_diag/attitude/analyze_out.txt",
+    "./dev/gnc2_diag/attitude/hopmodel_out.txt",
+    "./dev/gnc2_diag/attitude/simsum_out.txt",
+    "./dev/gnc2_diag/attitude/paired_out.txt",
+    "./dev/gnc2_diag/attitude/runs/"
+   ],
+   "caveats": "(1) 樣本數不大：12_Apex/13_Apex 的 strict 飛行完全相同；16_SpaceBerry/18_Taoyuan 也產生相同的 strict 飛行，因為同 seed、順序開頭一樣。有效樣本約 9 個，paired.py 只排除了 13_Apex，所以 SE 略偏小。(2) strict 飛行是混沌的：一次沒打中、要繞第二圈，後面每顆就晚 3–5 s。配對 SE 在 ±0.05 到 ±0.4 s/hop 之間，所以 ±0.1 s/hop 以內的差異都在雜訊裡。(3) hop 模型的簡化：質點、無阻力、固定全推力、平面轉向、初始角速度設為 0。平面模型顯示 ±1.5 rad/s 的初始角速度會讓重新指向時間變化 ±0.25–0.4 s。我們 pop 時 |w| 1.55 rad/s，但中位數是正在轉向下一段方向（−38°/s），轉離的比例 19%，跟他們一樣，所以忽略初始角速度不會系統性低估。(4) 事後回推方向假設全程定值推力攔截；τ < 0.3 s 時數值不穩，已排除。它只是比較用的代理指標，不是對方真正的導引指令。(5) 他們的擺角是從角加速度反推，忽略了氣動力矩；在我們的資料上驗證過，準確度夠用。(6) 各變體的速度檔仍由 base GNC 下訓練的 policy 選擇（co-adaptation）；strict 模式目標固定，但重練後的 policy 可能多受益一些。不過 3.4 倍角加速度的上限測試也只有約 0.13 s/hop。(7) fast_physics8（慣量 /8）有 8/11 發散，結果不可用；fast_physics 只縮放橫向慣量，滾轉慣量不動。(8) 任務描述說推力可以『+ 最多 15° 擺角』偏轉，在這個模擬器不成立：側向推力近乎 0，推力就是機頭軸。(9) 模擬期間有其他診斷 agent 同時佔用 CPU，只影響牆鐘時間，不影響結果（base 可以逐位元重現共享資料）。(10) seconds_per_hop = 0.15 是『姿態動態本身能解釋的上限』。hop 模型中 strict 多出的 0.22 s/hop 指向成本，主要來自 pop 當下狀態需要更大的轉向，屬於幾何／軌跡問題；ours_free 的指向成本（0.122 s）甚至比他們（0.169 s）還低。"
+  },
+  "verdict": {
+   "checks": [
+    {
+     "claim": "模擬器特性：TVC 擺角只產生力矩，側向推力是沒有單位的 sin(g)，推力方向就是機頭軸；K≈2.31，R² 0.96–0.99",
+     "status": "CONFIRMED",
+     "corrected_value": "flight.py：thrust1=-sin(gy)、thrust2=sin(gx) 沒乘推力，只有 M1/M2 乘了 T·lever。機體側向比力對 (T/m)·sin(g) 做有號回歸，斜率 −0.01、R² 0.00；改用氣動項 v_b·|v| 則 R² 0.85。自己擬合 K = 2.30 1/m（R² 0.977，lag 0 最佳）",
+     "note": "我另外驗證了四元數慣例：body→world 時 f 與機頭夾角中位數 2.0°（ours）/ 4.0°（their）；共軛慣例則是 50°/23°，所以 body→world 正確。側向比力中位數 0.42 m/s²，是氣動力造成的，跟擺角無關"
+    },
+    {
+     "claim": "燃燒期 |w_xy|：strict p50/p90/p95/max 0.36/1.75/1.98/2.41，>1.5 佔 15%；their 0.45/1.26/1.55/2.95，>1.5 佔 6%；free p95 1.85",
+     "status": "CONFIRMED",
+     "corrected_value": "獨立重算完全一致：their >1.5 佔 5.5%，各隊 p95 0.62–2.01；strict 15.3%；free p95 1.85、>1.5 佔 10.2%",
+     "note": "他們的 max 2.95 比我們高，所以他們有能力轉更快，只是比較少需要大轉向"
+    },
+    {
+     "claim": "擺角飽和很少（ours 記錄 ≥14.5° 3.9%；their 推算 ≥14° 1.1%；>16° ours 1.5%、their 0.7%）",
+     "status": "CONFIRMED",
+     "corrected_value": "角度上限：ours 3.9%（推算 4.4%），their 1.2%。但擺動速率上限 0.6°/步在 strict 有 36% 的燃燒步數卡住（free 30%）；與 F 夾角 >20° 時是 57%，<5° 時是 18%",
+     "note": "ours 的「>16° 1.5%」其實是推算誤差：我們的擺角向量長度上限 15°，記錄中 >16° 佔 0%。所以 their 的 0.7% 低於推算雜訊底線，不能拿來當 box 用法的證據。真正常碰到的硬體限制是擺動速率，不是角度"
+    },
+    {
+     "claim": "hop 起點對事後回推方向：strict 夾角 25.6°、t20 0.28、t10 0.73；大轉向 28/69，t10 0.69，47.6°/s；their 14.6°、0.01、0.33；21/116，t10 1.18，27.6°/s",
+     "status": "CONFIRMED",
+     "corrected_value": "獨立重算數字相同；their 大轉向 t10 的 IQR 0.82–1.38，strict 0.56–0.77；free 21.3°/0.29，大轉向 t10 0.47",
+     "note": "事後回推方向只是代理指標，their 的 t10 慢不代表他們轉不快（max |w| 2.95）。「我們轉得比較快」在角速度分佈上成立，但反映的是需要轉的角度較大，不是 their 的能力較差"
+    },
+    {
+     "claim": "機頭對 F：strict 中位數 7.7°，>20° 佔 32%，效率 0.879，損失推力 42.8 m/s/趟（free 5.2°/25%/0.920/29.0）",
+     "status": "CONFIRMED",
+     "corrected_value": "合併中位數是 7.34°（7.7° 是各趟中位數的平均）；其餘一致：0.321、0.879、42.8；free 5.17°、0.246、0.920、29.1",
+     "note": "只有中位數的定義不同"
+    },
+    {
+     "claim": "夾角 >20° 的時間分佈：換目標後 1 s 佔 50%，pop 前 0.5 s 佔 23%（損失 27%），其餘 27%；pop 前 F 轉速中位數 284°/s，65% 超過 2.5 rad/s",
+     "status": "CONFIRMED",
+     "corrected_value": "0.498/0.229/0.273；損失 0.506/0.272/0.222；F 轉速 284°/s，超過比例 0.647",
+     "note": "自己的相位切分程式與 v8_frate.py 重算，結果一致"
+    },
+    {
+     "claim": "以 F 為基準、>30° 的換目標事件：t20 0.49，t10 0.80（p90 1.88），n=64",
+     "status": "CONFIRMED",
+     "corrected_value": "n=64，t20 0.49，t10 0.80，p90 1.88；其中 7/64 在目標持續期間始終沒進到 10° 內（free 10/86）",
+     "note": ""
+    },
+    {
+     "claim": "平面閉迴路：現行律 t10 0.76、收斂 0.96，90° t10 0.94；最佳 sqrt 律 0.72/0.79；S 曲線下限 90° 約 1.19 s",
+     "status": "CONFIRMED",
+     "corrected_value": "自己的模擬：90° t10 0.94（延遲 0 或 1 步都一樣），收斂 1.01；S 曲線解析解 1.185 s（α_max 7.74、jerk 31 rad/s³）。平均值受角度集合影響：他們用 {20,35,50,90,135}，我用 20–135 每 5° 得到 t10 0.85 vs sqrt 0.82，收斂 0.97 vs 0.89",
+     "note": "他們的模型多一步延遲，但 K 擬合顯示 lag 0 最佳；不過延遲 0/1 對結果影響 ≤0.02 s。k_att 4/mr 3 會超調 25°，k_att 5/mr 4/kr 15 超調 92°（發散），跟實測一致"
+    },
+    {
+     "claim": "hop 模型：strict 實際 3.51、T_inst 2.50、指向成本 0.387、殘差 0.465、轉向 46.5°；their 2.29、1.83、0.169、0.275、24.5°；最佳律只省 0.014/0.010",
+     "status": "CONFIRMED",
+     "corrected_value": "自己的 3D 暴力搜尋模型（真實初始姿態與角速度、我們的串級律、擺角與擺動速率限制、5000 個方向）：T_inst 2.47 vs 1.82（差 0.66）；指向成本 strict 0.33（初始靜止 0.34）vs their 0.12，多 0.21；只取共同有解的 hop 則是 0.34 vs 0.10；free 0.06（初始靜止 0.12）；到 T_inst 方向的轉角中位數 40° vs 19°；殘差 0.53 vs 0.29",
+     "note": "有 5–9 個 hop 因為臨界可達或需要 >120° 大轉而沒解，已排除。結論一致：多出的指向成本約 0.21–0.24 s/hop；加入初始角速度不會讓成本變大"
+    },
+    {
+     "claim": "實模擬配對差異（10 個 replay）：katt4_mr3 +0.135±0.065、mr4 +0.11±0.08、sqrt −0.07±0.27、sqrt_c +0.04±0.05、box −0.04±0.06、ff +0.91±0.20、hold05 −0.08±0.08、katt5_mr4_kr15 全部墜毀",
+     "status": "CONFIRMED",
+     "corrected_value": "再排除 18_Taoyuan（跟 16_SpaceBerry 完全相同）後剩 9 個獨立 replay：katt4_mr3 +0.147±0.072、mr4 +0.116±0.090、sqrt −0.116±0.295、sqrt_c +0.044±0.056、box −0.050±0.068、ff +0.867±0.221、hold05 −0.115±0.079、katt2_mr1.5 +0.357±0.428",
+     "note": "runs/base 跟共享資料逐位元相同。去重後結論不變，沒有任何變體顯著變快"
+    },
+    {
+     "claim": "fast_physics（角加速度 3.4 倍）：80→87 顆，配對 −0.06±0.16 s/hop，合併平均快 0.13 s",
+     "status": "CONFIRMED",
+     "corrected_value": "K 7.78 vs 2.29（3.4 倍）；去重配對 −0.059±0.174；自己的 3D 模型用 3 倍 α 加同一組增益：strict 省 0.15 s/hop、free 0.02",
+     "note": "數字成立，但『上限』兩字不嚴謹：k_rate 4 只讓內迴路快約 1.4 倍，轉向時間大概只快 1.5–1.8 倍。真正的上限（瞬間轉向）是 strict 0.33–0.39 s/hop、free 0.06–0.12"
+    },
+    {
+     "claim": "pop 當下：strict |w| 1.58、機頭對下一段 26°、速度方向 24°、接近速度 9.7；their 0.64、14.5°、14.4°、14.4",
+     "status": "CONFIRMED",
+     "corrected_value": "不含第 1 顆 pop：1.58 / 26.3° / 24.2° / 10.0 m/s vs 0.64 / 14.5° / 14.4° / 14.9；含全部 pop 的接近速度：9.7 vs 14.4。另外 pop 時速度 16.6 vs 20.1 m/s",
+     "note": "接近速度的數字來自含第 1 顆的全部 pop，其他三項則排除第 1 顆，混用了兩種母體，但差異很小"
+    },
+    {
+     "claim": "hold05：pop 時 |w| 1.50→0.62，−0.08±0.08 s/hop，80→82 顆",
+     "status": "CONFIRMED",
+     "corrected_value": "|w| 中位數 1.50→0.61；去重 −0.115±0.079（約 1.5 SE）；每 replay +0.11±0.26 顆",
+     "note": "效果在雜訊邊緣"
+    },
+    {
+     "claim": "起飛→第一顆慢不是指向問題：6.67 vs 3.99 s，起飛需轉約 10°，t10≈0，各變體中位數 Δ=0",
+     "status": "CONFIRMED",
+     "corrected_value": "6.67 vs 3.99；轉角 10.0° vs 10.1°；t10 0.01 vs 0.20",
+     "note": "變體的『中位數 Δ=0』掩蓋了平均值 −0.2 到 −0.4 s 的位移，主要來自 12_Apex 從 7.4 s 變成 4.1–4.5 s，屬於混沌效應"
+    },
+    {
+     "claim": "油門使用相近：strict 0.904、≥0.97 佔 45%；their 0.914、48%",
+     "status": "CONFIRMED",
+     "corrected_value": "用自己的 a_full 表：strict 0.900、42%；their 0.909、46%；free 0.918、47%",
+     "note": ""
+    },
+    {
+     "claim": "strict 比他們每跳平均慢 1.22 s（3.51 vs 2.29）",
+     "status": "CONFIRMED",
+     "corrected_value": "非第一跳、燃燒期內：3.51（n=69）vs 2.29–2.32（n=116–118）",
+     "note": ""
+    },
+    {
+     "claim": "摘要：『指向相關的成本最多約 0.15 s/hop』",
+     "status": "REFUTED",
+     "corrected_value": "姿態迴路／硬體能解釋的部分 ≤0.15（同一硬體 ≤0.01–0.04；3.4 倍 α 約 0.06–0.15）。但指向相關的成本：strict 絕對值 0.33–0.39 s/hop，比 their（0.10–0.17）多 0.21–0.24 s/hop（約 1.22 s 落差的 18%）",
+     "note": "跟他們自己 hop 模型的 0.387/0.22 互相矛盾。這 0.21–0.24 應該歸到 pop 狀態／幾何那一類，跟 T_inst 的 0.66 可以相加（加法分解，沒有重複計算），但不能同時算進姿態和幾何兩類"
+    },
+    {
+     "claim": "現有 GNC 能改的部分不到 0.02–0.08 s/hop",
+     "status": "CONFIRMED",
+     "corrected_value": "模型 ≤0.01–0.04；實測最好的變體是 −0.05 到 −0.115，±0.07–0.08，沒有一個超過 1.5 SE",
+     "note": ""
+    },
+    {
+     "claim": "ours_free 的指向成本（0.122）比他們（0.169）還低",
+     "status": "CONFIRMED",
+     "corrected_value": "去重後 free 0.07（含初始角速度）到 0.13（初始靜止），their 0.12。free 的執行開銷 hop − T_inst 0.39 s，their 0.47 s；落差幾乎全在 T_inst（2.50 vs 1.82）",
+     "note": "新發現的 caveat：ours_free 只有 5 個獨立飛行。10_CoolBa=11_Mochi=13_Yaka=16_TeamDJ，12_Apex=13_Apex=16_SpaceBerry=18_Taoyuan，因為同 seed。finding 只提到 strict 有重複。去重後結論不變"
+    }
+   ],
+   "seconds_per_hop_assessment": "0.15 s/hop 只在狹義定義下成立，也就是「姿態迴路加硬體本身」能解釋的部分。支持的數字有：同一硬體換最佳控制律 ≤0.01–0.04 s/hop（hop 模型與我的平面模擬）；實測變體沒有一個顯著變快（去重後最好的 hold05 是 −0.115±0.079）；角加速度 3.4 倍時配對 −0.06±0.17、合併 0.13；我的 3D 模型在 3 倍 α 下 strict 省 0.15、free 0.02。\n\n但摘要寫的「指向相關成本最多約 0.15」不對。我用獨立的 3D 模型重算（含真實初始角速度），strict 的指向成本是 0.33 s/hop，their 是 0.12，多出約 0.21–0.24 s/hop，跟 finding 的 0.22 一致。原因是 pop 當下需要轉的角度較大（到 T_inst 方向 40° vs 19°），所以應該歸到幾何／pop 狀態那一類。它跟 T_inst 落差（0.66 s/hop，已重現）是可以相加的兩項，彼此不重複計算。但彙整各假說時，這 0.21–0.24 只能放在一個類別裡。\n\n在 free 模式（實際比賽用的 policy），指向成本 0.07–0.13 跟 their 的 0.12 相當；hop − T_inst 的執行開銷 0.39 甚至低於 their 的 0.47。所以對 free 來說，指向幾乎解釋不了落差，落差約 0.68 s/hop 全在 T_inst，也就是目標選擇加上 pop 當下的速度方向。不過 free 只有 5 個獨立飛行。\n\n建議的歸類：姿態動態 ≈0.02–0.15 s/hop；pop 狀態造成的額外轉向 ≈0.2 s/hop（歸幾何）。",
+   "overall": "holds",
+   "fix_assessment": "(1) 維持現有增益、不要調快：證據支持。去重後 katt4_mr3 +0.147±0.072、mr4 +0.116±0.09；katt5_mr4_kr15 全部墜毀；我的平面模擬也顯示 k_att 4/mr 3 超調 25°、k_att 5/kr 15 超調 92°。另外補充一點：擺動速率上限在轉向時有 57% 的時間被卡住，這才是內迴路的真正瓶頸，調增益繞不過去。\n\n(2) box 擺角限制：效果是 0（−0.05±0.07），當作可選項可以，但不值得優先做。\n\n(3) hold05／預先轉向：hold05 效果在雜訊邊緣（−0.08 到 −0.115，±0.08）。預先轉向的上限，free 用我的模型只有約 0.07–0.13 s/hop（finding 寫 0.12，偏樂觀但接近），strict 0.33。對比賽 policy 的收益上限很小，而且有擦身而過的風險，優先度要低。\n\n(4) 不加前饋：證據支持（+0.87±0.22 s/hop）。\n\n(5) 主力改做 pop 當下的狀態塑形：方向跟證據一致。T_inst 落差 0.66 s/hop、接近速度 9.7 vs 14.4，而且 free 模式的落差幾乎全在 T_inst。但 T_inst 同時受目標選擇（距離、順序）和 pop 當下速度方向影響，這份 finding 沒有把兩者拆開，所以雙目標終端導引的預期效果還沒量化。另外 strict 強迫走他們的順序，本身就會放大我們的幾何劣勢。建議先在 free 模式把 T_inst 拆成這兩個成分，再決定要改規劃器還是改終端導引。\n\n(6) sqrt 律：效果在雜訊內，同意不值得單獨做。\n\n整體來說，這些修正建議都跟證據相符，沒有哪一項建議跟數據矛盾。\n\n我的腳本都在 ./dev/gnc2_diag/verify_attitude/：base.py、v1_frames.py、v1b_side.py、v2_rates.py、v3_hops.py、v4_F.py、v5_turnmodel.py、v6_paired.py、v7_planar.py、v8_frate.py；輸出在 v5_out.txt、v5_out.json、v3_out.json。"
+  }
+ },
+ {
+  "key": "chaining",
+  "finding": {
+   "hypothesis": "HOP GEOMETRY AND CHAINING: the top teams reach each balloon already moving toward the next one and fly through it. Our N=2 ZEM guidance ignores the next balloon until the pop, so we arrive pointing the wrong way and have to brake and turn.",
+   "verdict": "major",
+   "seconds_per_hop": 0.7,
+   "claims": [
+    {
+     "claim": "At the pop we are pointed away from the next balloon. Median angle between the rocket velocity (relative to the next balloon) and the line of sight to it:",
+     "value_ours": "strict 34.5 deg (54 hops, duplicate flights removed); free 34.8 deg (39 hops)",
+     "value_theirs": "18.7 deg (118 hops); 51% of hops under 20 deg (ours_strict 13%)",
+     "how_measured": "hops.py: state at the last step before each pop's status change (R), next popped balloon's position and velocity from B at the same step. Pop-to-pop hops inside the burn only."
+    },
+    {
+     "claim": "The distance to the next balloon is the same. The gap is in closing speed and sideways speed, not in how far the next balloon is.",
+     "value_ours": "d 38.0 m; closing speed 10.1 m/s (strict) / 9.5 (free); sideways speed 7.1 / 8.8 m/s",
+     "value_theirs": "d 36.8 m; closing speed 14.5 m/s; sideways speed 4.6 m/s",
+     "how_measured": "hops.py medians. Closing speed = (v - v_ball).r_hat; sideways speed = the part of the relative velocity perpendicular to the line of sight."
+    },
+    {
+     "claim": "We brake and turn inside each hop. They keep their speed and turn little.",
+     "value_ours": "min speed / speed at pop 0.77 (strict), 0.90 (free); velocity turns 56 deg (strict) / 55 deg (free) per hop; speed at pop 16.3 m/s; relative speed at hit 11.7 m/s",
+     "value_theirs": "min speed / speed at pop 0.98 (70% of hops keep at least 80% of their speed); velocity turns 27 deg per hop; speed at pop 20.1 m/s; relative speed at hit 15.5 m/s",
+     "how_measured": "hops.py / shape.py: rocket speed over [pop k, pop k+1]; angle between the velocity at pop k and at pop k+1."
+    },
+    {
+     "claim": "Delta-v used per hop follows hop time; it is not a separate limit.",
+     "value_ours": "thrust integral 40.0 m/s per hop; mean |f| / capacity 0.85",
+     "value_theirs": "28.3 m/s per hop; 0.91",
+     "how_measured": "Thrust acceleration = dv/dt - g + drag (k_drag from GNCAgent), integrated over each hop. Capacity = 95th percentile of |f| during the burn (about 14.2 m/s^2)."
+    },
+    {
+     "claim": "They point the thrust for the next hop before the pop.",
+     "value_ours": "thrust reaches within 15 deg of the next hop's min-time direction 0.63 s after the pop (strict) / 0.15 s (free); nose error at pop 44.6 / 31.3 deg",
+     "value_theirs": "0.02 s; nose error 19.4 deg",
+     "how_measured": "hops.py hop_force: min-time direction from the constant-force reach model with a 1.5 m hit radius (the env pops when the rocket centre is within 1.5 m, balloon_world._detect_pops)."
+    },
+    {
+     "claim": "They come in on the far side of the balloon and curve through it toward the next one. We aim at the centre with no side preference.",
+     "value_ours": "strict: side offset about 0 at every lead time (cos -0.06 to -0.15); free: +0.21 m toward the next balloon already at -0.8 s. Straight-line miss at -0.3 s: 0.29 m (strict) / 0.47 m (free)",
+     "value_theirs": "0.8 s before the pop the straight-line miss is 1.10 m on the side AWAY from the next balloon (cos -0.56; only 16% of hops on the next side). It shrinks to +0.13 m toward the next balloon at -0.3 s. Straight-line miss at -0.3 s: 0.80 m",
+     "how_measured": "offset_dir.py / hitdist.py: closest approach assuming a straight-line relative path (gravity cancelled) from tau before the pop, projected on the next balloon's direction perpendicular to the approach."
+    },
+    {
+     "claim": "Paired decomposition of the hop-time gap (same balloon pair b_k -> b_k+1 in both flights): arrival state accounts for about 0.5 s per hop.",
+     "value_ours": "ours_strict hop is 1.20 s longer (mean; median 1.08; SE 0.22) = alignment 0.39 + arrival speed 0.11 + execution 0.69",
+     "value_theirs": "reference",
+     "how_measured": "dedup.py: 54 paired hops. Tmin = min reach time from the pop state (constant force, gravity). Alignment = Tmin - Tmin with the velocity rotated onto the line of sight at the same speed."
+    },
+    {
+     "claim": "The state at the pop explains the whole free-mode gap and about half of the strict gap.",
+     "value_ours": "pooled their + strict: geometry covers 0.66 s per hop, leftover 'ours' term +0.67 +/- 0.16 s. Pooled their + free: leftover -0.07 +/- 0.11 s (not significant)",
+     "value_theirs": "reference",
+     "how_measured": "regress.py: ordinary least squares T ~ d + closing speed + sideways speed + ours indicator; counterfactual uses their median closing and sideways speeds."
+    },
+    {
+     "claim": "Simulated fix, strict order: flying toward the next balloon while the current one is still guaranteed to be hit recovers about 0.7 s per hop.",
+     "value_ours": "baseline 80 pops (11 flights), 63 on the 9 unique flights, hop median 3.49 s / mean 3.66. Handover (keep 1.0 m of the 1.5 m radius): 95 / 76, median 2.98. Blend: 96 / 77, median 2.80 / mean 2.90; 7 of 9 flights better, 1 worse. Margin 0.7 m: 67; 1.3 m: 74",
+     "value_theirs": "hop median 2.22 / mean 2.29",
+     "how_measured": "chain_sim.py: dev/replay_teacher Teacher subclass (SLACK=inf, their launch time, policy speed levels, s4bw4 checkpoint). The hit check assumes constant acceleration. The blend picks lambda in 0..1 minimising t_hit(current) + t_reach(next). chain_cmp.py for the duplicate-free numbers."
+    },
+    {
+     "claim": "The blend moves our arrival geometry toward theirs, though not all the way.",
+     "value_ours": "blend vs baseline: alignment angle 29.1 vs 34.5 deg; closing speed 12.0 vs 10.1 m/s; turn time 0.34 vs 0.63 s; nose error 33.1 vs 44.6 deg; velocity turn 44 vs 56 deg; Tmin 1.94 vs 2.33 s",
+     "value_theirs": "18.7 deg; 14.5 m/s; 0.02 s; 19.4 deg; 27 deg; Tmin 1.68 s",
+     "how_measured": "chain_log.py (blend, 9 unique flights logged in data/gnc2 format), then hops.py with HOPS_DIR=logs."
+    },
+    {
+     "claim": "Our RL policy already hands over by itself. The strict Teacher holds each target until it pops, so ours_strict is handicapped by about 0.7 s per hop.",
+     "value_ours": "free: 44 of 45 pops were of a balloon the policy had already switched away from. The switch comes a median 0.58 s before the pop (IQR 0.44-0.69). 42 of 49 switches away from a live target still popped it within 2 s; the other 7 were deliberate retargets about 35 m away. Strict: 100% of pops are on the current target",
+     "value_theirs": "n/a",
+     "how_measured": "TGT array in ours_free / ours_strict: the target at the step before each pop, and the time of the last step with TGT == popped balloon."
+    },
+    {
+     "claim": "Adding GNC chaining on top of the current policy in free mode gives nothing measurable.",
+     "value_ours": "baseline 8.50 pops per seed. Blend holding the previous target as must-hit: +0.05 +/- 0.20. Same plus early shaping toward the policy's masked second choice: -0.05 +/- 0.17. Handover to the masked second choice: -0.05 +/- 0.21. Forcing a target after a pop: -0.55 +/- 0.18 (GNC nearest) / -1.50 +/- 0.29 (policy second choice)",
+     "value_theirs": "n/a",
+     "how_measured": "chain_free.py / chain_free2.py, seeds 20000-20019, scenario 1. Paired per-seed differences, mean +/- standard error, 20 seeds."
+    },
+    {
+     "claim": "In free mode about two thirds of the misalignment comes from the balloon sequence the policy picks, not from the approach.",
+     "value_ours": "sequence bend: free 46.7 deg, strict 37.3 deg. Arrival rotated toward the next balloon beyond the arriving chord: free -7.1 deg, strict -4.3 deg",
+     "value_theirs": "bend 33.8 deg; rotation -14.0 deg",
+     "how_measured": "shape.py: bend = angle between the arriving chord (pop k-1 to pop k) and the line of sight to b_k+1. Rotation = alignment angle minus bend (medians)."
+    },
+    {
+     "claim": "Path shape: they fly a climbing sweep, not a vertical column climb.",
+     "value_ours": "strict: velocity elevation at pop 33 deg; 71% of next balloons above; 30% of hops climb more than they travel horizontally",
+     "value_theirs": "velocity elevation 35 deg, vz 10 m/s, pops at a median 104 m altitude; 64% of next balloons above; only 26% of hops climb more than horizontally; 14% of hops are under 15 m (same share as ours)",
+     "how_measured": "hops.py / shape.py medians."
+    },
+    {
+     "claim": "Two things that do not work: a terminal-velocity (ZEM/ZEV) constraint, and a constant-force two-leg offline optimisation, which underestimates the gain.",
+     "value_ours": "ZEM/ZEV with kappa 0.5 / 1.0: 55 / 61 pops vs 63 on the 9 unique flights. Offline two-leg optimisation from our pop states saves only 0.11 s median per two legs",
+     "value_theirs": "their actual two-leg time 4.15 s beats the naive constant-force chain (4.79 s) and is close to the model optimum (4.06 s)",
+     "how_measured": "chain_sim3.py (a = 6 ZEM/t^2 - 2 ZEV/t, used only while it fits the thrust); chain_opt.py grid over hit time and a 1 m aim offset."
+    }
+   ],
+   "fixes": [
+    {
+     "change": "Rebase the strict-order benchmark on a Teacher that hands over (the blend logic in dev/gnc2_diag/hop_geometry/chain_sim.py mode 2, keeping 1.0 m of the 1.5 m radius) for every GNC v2 diagnosis. Today's Teacher holds each target until it pops, which our policy never does.",
+     "expected_effect": "Strict baseline goes from 80 to 96 pops on the 11 flights and hop median from 3.49 to 2.80 s. The strict-vs-theirs gap shrinks from about 1.27 to about 0.58 s per hop, so other hypotheses are measured against a fair flight.",
+     "risk": "None for the agent (diagnostic only). Other analyses that used ours_strict overstate our flight gap by about 0.7 s per hop."
+    },
+    {
+     "change": "GNC v2: make the handover explicit in GNCAgent. When the policy switches from A to B while A is alive, keep A as must-hit. Each step, pick the blend a = (1-l) a_A + l a_B that still passes A within 1.0 m (constant-acceleration prediction, horizon 2.5 s) and minimises t_hit(A) + t_reach(B). Drop A when it pops or no blend reaches it.",
+     "expected_effect": "With the current policy in free mode: about 0 (+0.05 +/- 0.20 pops per seed, measured). Its value is structural: the handover no longer depends on the 0.5 s decision cadence and the policy's blind switching becomes safe, which is the prerequisite for retraining toward earlier handovers. In strict order it alone gives +16 pops / about 0.7 s per hop.",
+     "risk": "Low. 11 lambda values x one reach time per step, so check the per-step time budget. With sensor noise, actuator lag or gusts (scenarios 2-4) the 1.0 m margin may need to grow; I did not test beyond scenario 1."
+    },
+    {
+     "change": "Let shaping start earlier by giving GNC the next target: a two-target action from the policy (target, next) or a two-leg plan from the DP planner. Then GNC can set up the far-side approach they use (1.1 m on the far side 0.8 s out) instead of starting the turn only after the 0.58 s policy switch.",
+     "expected_effect": "Upper bound: close the remaining arrival-state gap after chaining (Tmin 1.94 vs their 1.68 s), worth about 0.26 s per hop, roughly +1 pop per run at about 11 hops per burn.",
+     "risk": "Medium to high: needs retraining. The naive version (the policy's masked second choice as next, same blend) measured -0.05 +/- 0.17. The constant-force cost model misses turn dynamics, so a better cost term (turn time at the attitude-rate limit) is needed."
+    },
+    {
+     "change": "Add a turn cost at sequence level: penalise the bend angle between consecutive balloons in target selection (DP planner cost, or reward shaping in PPO).",
+     "expected_effect": "Free-mode bend is 46.7 deg vs their 33.8 deg, about two thirds of our free-mode misalignment. The regression suggests up to about 0.5 s per hop if sideways speed at the pop matched theirs, but that is observational only.",
+     "risk": "Medium: fewer candidate targets; the policy is co-adapted, so it needs retraining; the gain is unproven in simulation."
+    },
+    {
+     "change": "Do NOT pursue: a ZEM/ZEV terminal-velocity constraint, or overriding the policy's target after a pop.",
+     "expected_effect": "Avoids measured losses: ZEM/ZEV -8 / -2 pops on the 9 unique strict flights; target override -0.55 to -1.50 pops per seed in free mode.",
+     "risk": "n/a"
+    }
+   ],
+   "scripts": [
+    "./dev/gnc2_diag/hop_geometry/hops.py",
+    "./dev/gnc2_diag/hop_geometry/summary.py",
+    "./dev/gnc2_diag/hop_geometry/paired.py",
+    "./dev/gnc2_diag/hop_geometry/dedup.py",
+    "./dev/gnc2_diag/hop_geometry/shape.py",
+    "./dev/gnc2_diag/hop_geometry/anticip.py",
+    "./dev/gnc2_diag/hop_geometry/offset_dir.py",
+    "./dev/gnc2_diag/hop_geometry/hitdist.py",
+    "./dev/gnc2_diag/hop_geometry/regress.py",
+    "./dev/gnc2_diag/hop_geometry/exec_split.py",
+    "./dev/gnc2_diag/hop_geometry/chain_opt.py",
+    "./dev/gnc2_diag/hop_geometry/chain_sim.py",
+    "./dev/gnc2_diag/hop_geometry/chain_sim3.py",
+    "./dev/gnc2_diag/hop_geometry/chain_cmp.py",
+    "./dev/gnc2_diag/hop_geometry/chain_log.py",
+    "./dev/gnc2_diag/hop_geometry/chain_free.py",
+    "./dev/gnc2_diag/hop_geometry/chain_free2.py",
+    "./dev/gnc2_diag/hop_geometry/next_pred.py",
+    "./dev/gnc2_diag/hop_geometry/debug_pred.py"
+   ],
+   "caveats": "1) Most important: the 0.7 s per hop is real for ours_strict vs theirs, but most of it is an artifact of the strict Teacher holding each target until it pops. Our free policy already hands over about 0.58 s before each pop, so free-mode hops (2.90 s median, duplicates removed) already look like strict + blend (2.80 s). Every GNC-side chaining variant on top of the current policy measured about 0 pops (20 seeds, standard error about 0.2). The arrival-geometry gap that remains in free mode (alignment 35 vs 19 deg) comes about two thirds from the policy's sequence choice and needs a policy or planner change plus retraining.\n\n2) Duplicate flights: ours_free has only 5 unique flights (one per seed: 0, 14, 1362, 1957083, 205). ours_strict has 9: 13_Apex = 12_Apex and 16_SpaceBerry = 18_Taoyuan, identical pops. The headline 105 free pops and 2.58 s are inflated by this; without duplicates free is 45 pops on 5 flights, hop median 2.90 s. The main claims use the duplicate-free numbers.\n\n3) Tmin and the offline two-leg model assume constant thrust, instant turning and balloons at constant velocity. They are good for decomposition (their T/Tmin never falls below 0.95) but underestimate the cost of turning; the simulation results are the reliable numbers.\n\n4) Sample sizes are small: 54 paired hops, 9 unique strict flights, 20 free seeds. Scenario 1 only (no noise, lag or gusts). The strict simulations keep the policy's speed levels, which were trained with the baseline GNC.\n\n5) The regression results are observational, not causal.\n\n6) Launch-to-first-pop (6.7 s vs their 4.0 s) is untouched by chaining (6.67 to 6.68 s in strict) and is a separate once-per-run loss of about one hop.\n\n7) Outputs are in ./dev/gnc2_diag/hop_geometry/: hops_*.csv, paired.csv, anticip.csv, chain_*.json, free_*.json, logs/ours_m2_*.npz, and the batch logs. No existing file was modified."
+  },
+  "verdict": {
+   "checks": [
+    {
+     "claim": "1. At the pop our velocity (relative to the next balloon) is further off the line of sight to it: their 18.7 deg (118 hops), strict 34.5 (54), free 34.8 (39); 51% of their hops under 20 deg vs 13% of strict.",
+     "status": "CONFIRMED",
+     "corrected_value": "their 18.5 deg (n=118), strict 34.7 (n=54, duplicates removed), free 34.7 (n=39); under 20 deg: 51.7% / 13.0% / 17.9%",
+     "note": "Recomputed in dev/gnc2_diag/verify_chaining/vhops.py. Pops are taken from S (the first step with status 2), not from the pops array, and the state is read at the status-change step instead of the step before; the medians barely move. The hop sets match exactly: 118 / 54 / 39 pop-to-pop hops inside the 30 s burn. The duplicate flights are confirmed: in strict, 13_Apex equals 12_Apex and 16_SpaceBerry equals 18_Taoyuan; free has one flight per seed, so only 5 are unique."
+    },
+    {
+     "claim": "2. Distance to the next balloon is the same; the gap is in closing speed and sideways speed.",
+     "status": "CONFIRMED",
+     "corrected_value": "d 36.6 / 37.9 / 38.2 m; closing speed 14.4 / 10.0 / 9.5 m/s; sideways speed 4.6 / 7.1 / 8.8 m/s (their / strict / free)",
+     "note": "Closing speed is (v - v_ball) projected on the unit line of sight; the sign convention is correct."
+    },
+    {
+     "claim": "3. We brake and turn inside each hop; they keep their speed and turn little.",
+     "status": "CONFIRMED",
+     "corrected_value": "min speed / speed at pop: their 0.98, strict 0.75 (the claimed 0.77 includes duplicate flights), free 0.91. Share of hops keeping at least 80% of their speed: 71% / 41% / 69%. Velocity turn 26.6 / 56.3 / 54.6 deg. Speed at pop 20.1 / 16.3 / 16.8 m/s. Relative speed at hit 15.5 / 11.7 / 13.9 m/s",
+     "note": "Measured over [pop k, pop k+1)."
+    },
+    {
+     "claim": "4. Delta-v per hop follows hop time: 40.0 vs 28.3 m/s; mean |f| / capacity 0.85 vs 0.91; capacity about 14.2 m/s^2.",
+     "status": "CONFIRMED",
+     "corrected_value": "dv 40.0 (strict) vs 28.3 (their) m/s; use 0.85 vs 0.91; capacity 14.18 vs 14.23 m/s^2",
+     "note": "Specific force recomputed by central difference as dv/dt - g - a_drag. The quaternion convention (scalar-first, body to world, nose = body z) checks out: the angle between the nose and the specific force has a median of 1.4-6.7 deg per flight and a 95th percentile of 5-21 deg, consistent with the 15 deg gimbal. Drag is under 0.15 m/s^2, so it is irrelevant."
+    },
+    {
+     "claim": "5. They point the thrust for the next hop before the pop: time to within 15 deg of the next min-time direction 0.02 s (their) vs 0.63 (strict) / 0.15 (free); nose error 19.4 / 44.6 / 31.3 deg.",
+     "status": "CONFIRMED",
+     "corrected_value": "turn time 0.00 / 0.62 / 0.145 s; nose error 19.8 / 44.2 / 30.7 deg",
+     "note": "Recomputed with my own continuous-time Tmin (scan plus bisection, 1.5 m hit radius)."
+    },
+    {
+     "claim": "6. They come in on the far side of the balloon (straight-line miss 1.10 m away from the next balloon at -0.8 s, cos -0.56, 16% on the next side, +0.13 m at -0.3 s) and curve through it; we aim at the centre.",
+     "status": "UNCERTAIN",
+     "corrected_value": "The numbers reproduce: their -1.08 m at -0.8 s, cos -0.56, 16% on the next side, +0.15 m at -0.3 s; strict about 0; free +0.20 m at -0.8 s. But over the last 0.8 s their mean acceleration relative to the balloon, projected toward the next balloon, has a median of +3.96 m/s^2, which predicts a +1.27 m shift. The actual offset at the pop is only +0.09 m toward the next balloon.",
+     "note": "The far-side straight-line miss is exactly what you get when a rocket accelerates toward the next balloon during the approach. It is the same fact as claim 5 (thrust already turned), not a separate aim-offset strategy. Fix 3's target of '1.1 m on the far side 0.8 s out' mistakes this extrapolation for a geometry to aim at. What should be copied is roughly 4 m/s^2 of lateral acceleration toward the next balloon in the last 0.8 s. Script: vside.py."
+    },
+    {
+     "claim": "7. Paired decomposition over 54 same-pair hops: ours_strict is 1.20 s longer = alignment 0.39 + arrival speed 0.11 + execution 0.69.",
+     "status": "CONFIRMED",
+     "corrected_value": "dT +1.20 (median +1.08, SE 0.22) = alignment +0.40 (SE 0.10) + speed +0.12 (SE 0.04) + execution +0.68 (SE 0.19)",
+     "note": "All 54 deduplicated strict hops pair with theirs. This is measured against ours_strict, so it includes the no-handover artifact (see claims 9 and 11)."
+    },
+    {
+     "claim": "8. Regression: geometry covers 0.66 s per hop in strict, leftover 'ours' term +0.67 +/- 0.16; free leftover -0.07 +/- 0.11.",
+     "status": "CONFIRMED",
+     "corrected_value": "With duplicate hops (as the script ran): ours +0.66 +/- 0.16, counterfactual -0.66 s. Duplicates removed: strict ours +0.74 +/- 0.18, counterfactual -0.63 s; free ours -0.02 +/- 0.16 (5 flights)",
+     "note": "The regression kept duplicate flights, which overweights them and shrinks the SE, but the conclusions hold. It is observational only. A split I computed myself agrees for free mode: T - Tmin (execution) is equal to theirs (mean 0.54 vs 0.57 s), so the whole free-mode gap is in Tmin at the pop (2.35 vs 1.72 s)."
+    },
+    {
+     "claim": "9. Simulated fix in strict order: baseline 80 / 63 pops; handover 95 / 76; blend 96 / 77, hop median 2.80 s, 7 of 9 flights better; margin 0.7 m gives 67, 1.3 m gives 74.",
+     "status": "CONFIRMED",
+     "corrected_value": "JSON recount matches exactly (chain_m0 equals ours_strict pop for pop). My own hard time-based handover (switch to their next balloon when the min reach time drops below TAU, no hit check; vhand.py) gives: TAU 0.5 s: 73 pops (+10; 6 better, 0 worse), hop median 3.02; TAU 0.7 s: 74 (+11), median 2.89; TAU 0.9 s: 60 (-3). Blend +14 (mean +1.56 +/- 0.58 per flight).",
+     "note": "The strict handicap is real and does not depend on the blend implementation. The size is 0.5-0.7 s per hop by median (0.4-0.76 by mean), so 0.7 is at the top of the range. Handing over too early (TAU 0.9) loses pops."
+    },
+    {
+     "claim": "10. The blend moves our arrival geometry toward theirs: alignment 29.1 vs 34.5 deg, closing speed 12.0 vs 10.1 m/s, turn time 0.34 vs 0.63 s, nose error 33.1 vs 44.6 deg, velocity turn 44 vs 56 deg, Tmin 1.94 vs 2.33 s.",
+     "status": "CONFIRMED",
+     "corrected_value": "29.1 vs 34.7 deg; 12.0 vs 10.0 m/s; 0.37 vs 0.62 s; 32.6 vs 44.2 deg; 43.6 vs 56.3 deg; Tmin 1.93 vs 2.32 s",
+     "note": "Recomputed from logs/ours_m2_*.npz with my own vhops.py; the pop counts match chain_m2_r10_w0.json. About 0.3 s of the blend's 0.69 s median gain is in execution (T - Tmin mean 1.32 -> 0.87 s), not in the state at the pop."
+    },
+    {
+     "claim": "11. Our free policy already hands over: 44 of 45 pops were of a balloon it had already switched away from, a median 0.58 s before the pop (IQR 0.44-0.69); 42 of 49 switches from a live target still popped it within 2 s; strict pops are 100% on the current target.",
+     "status": "CONFIRMED",
+     "corrected_value": "44 of 45; lead 0.58 s (IQR 0.44-0.70); at the switch the GNC min reach time is 0.70 s (IQR 0.60-0.90) and the balloon is 9.3 m away. I count 54 switches away from a live target: 44 popped within 2 s, 10 did not (median 31 m away). Strict: 0 of 63 pops were off the current target.",
+     "note": "The switch counts differ slightly because I also count switches to 'no target'. Script: vtgt.py."
+    },
+    {
+     "claim": "12. Adding GNC chaining to the current policy in free mode gives nothing measurable: +0.05 +/- 0.20, -0.05 +/- 0.17, -0.05 +/- 0.21; target override -0.55 +/- 0.18 and -1.50 +/- 0.29 pops per seed.",
+     "status": "CONFIRMED",
+     "corrected_value": "Same paired differences from free_*.json over 20 seeds. The 20-seed baseline is 8.50 pops per seed with hop median 3.10 s (g1: 3.05).",
+     "note": "The numbers are right, but the tests are weak as tests of chaining. g1 is nearly a no-op by construction, since the baseline already pops the previous target 44 of 45 times. The f1 variants record next-target prediction hits of only 8 of 163, partly because the policy switches before the pop. So this shows these implementations add nothing, not that chaining cannot help. Also, the 5-seed replay free hop median (2.90 s) is optimistic compared with 3.10 s on 20 seeds."
+    },
+    {
+     "claim": "13. In free mode about two thirds of the misalignment comes from the balloon sequence (bend 46.7 vs their 33.8 deg; rotation -7.1 vs -14.0).",
+     "status": "UNCERTAIN",
+     "corrected_value": "The claimed values reproduce only with duplicate free flights, the launch-pad chord for the first hop, and medians (46.6 / -7.0). Duplicates removed: medians give bend 54.1 vs 33.6 and rotation -1.9 vs -14.0, so about 63% from the sequence; means give bend 50.7 vs 44.7 and rotation -4.3 vs -16.6, so about 33%; without the launch chord, medians give bend 45.0 vs 34.8 and rotation +3.7 vs -16.1, so about 34%. For strict the approach dominates (bend gap 3.9 deg vs rotation gap 9.5).",
+     "note": "The medians of angle differences do not add up, and the sequence share swings between about one third and about two thirds with the definition used. This breaks the stated rule that main claims use duplicate-free numbers. Script: vbend.py."
+    },
+    {
+     "claim": "14. Path shape: climbing sweep; velocity elevation 35 vs 33 deg, vz 10 m/s, median pop altitude 104 m; 64% (their) vs 71% (strict) next balloons above; 26% vs 30% of hops climb more than they travel horizontally; 14% of hops under 15 m, same share as ours.",
+     "status": "CONFIRMED",
+     "corrected_value": "Elevation 35.4 / 33.3 deg; their vz 10.1 m/s; their altitude 104 m above the pad; next balloon above: their 64%, strict 65% duplicates removed (71% only with duplicates and the step-before state); climb more than horizontal 26% / 30%; under 15 m 14% (their) vs 9% (strict, duplicates removed)",
+     "note": "The 'more balloons above' contrast disappears once duplicates are removed."
+    },
+    {
+     "claim": "15. ZEM/ZEV gives 55 / 61 pops vs 63; the offline two-leg optimisation saves only 0.11 s per two legs.",
+     "status": "UNCERTAIN",
+     "corrected_value": "55 / 61 vs 63 recounted from JSON (confirmed). The offline 0.11 s was not recomputed.",
+     "note": "This was one prototype. It used ZEM/ZEV only while the command fit within the thrust (a_thrust - 0.3), otherwise it switched back to N=2, which invites chattering. Only two kappa values were tried. That supports 'this prototype lost pops', not 'terminal-velocity shaping does not work'; the blend is itself a working form of terminal shaping."
+    },
+    {
+     "claim": "Launch to first pop is untouched by chaining (their 4.0 s vs strict 6.7 s).",
+     "status": "CONFIRMED",
+     "corrected_value": "Median 3.99 s (their) vs 6.67 s (strict); 5.80 s for free on 20 seeds",
+     "note": "This is a separate once-per-run loss and is not part of the per-hop numbers."
+    }
+   ],
+   "seconds_per_hop_assessment": "The 0.7 s per hop holds only for ours_strict compared with the top teams, and there it is mostly a benchmark artifact, as the finding's own caveat says. My own time-based handover in strict order recovered +10 to +11 pops on the 9 unique flights (median hop 3.49 -> 2.89-3.02 s), against +14 for the blend (-> 2.80 s). So the strict handicap is about 0.5-0.7 s per hop by median.\n\nFor the real agent in free mode, GNC-side chaining measured about 0 (+/-0.2 pops per seed, roughly +/-0.07 s per hop). The policy already switches away from its target when the GNC min reach time to it is about 0.7 s (the pop follows 0.58 s later). Handing over earlier than that (TAU 0.9) loses pops in strict.\n\nWhat remains for free mode: on the 5 replay seeds our execution time (T - Tmin, mean 0.54 s) already equals theirs (0.57 s). The whole free gap of about 0.6 s per hop sits in the arrival state (Tmin 2.35 vs 1.72 s). On 20 random seeds the free hop median is 3.10 s, so the gap may be larger than the 5-seed 2.90 s suggests. That 0.6 s is only observationally linked to hop geometry, and no tested GNC change captures it.\n\nDouble counting: the blend's 0.69 s median gain is about 0.39 s in Tmin plus about 0.3 s in execution (turn time 0.62 -> 0.37 s). The execution part overlaps with any turn-rate or attitude hypothesis measured against ours_strict. More generally, every hypothesis measured against ours_strict carries this 0.5-0.7 s artifact.\n\nNet: about 0 s per hop achievable from GNC alone with the current policy, and up to about 0.5-0.6 s per hop of arrival-state gap that needs sequence or next-target-aware planning (unproven). The 'major / 0.7 s' headline overstates what GNC v2 alone can deliver.",
+   "overall": "partly",
+   "fix_assessment": "Fix 1 (rebase the strict benchmark on a handover Teacher) follows directly from the evidence and is the most valuable result. It is independently reproduced: a plain time-based handover at TAU 0.5-0.7 s gives +10 to +11 pops with 0-1 flights worse. Recommend the blend with its hit check (keep 1.0 m of the radius) over a pure time rule, because TAU 0.9 already loses 3 pops. All other GNC v2 hypotheses measured against the current ours_strict overstate the flight gap by about 0.5-0.7 s per hop and should be re-measured.\n\nFix 2 (explicit must-hit handover in GNCAgent) is safe but measured at about 0 pops in free mode (+0.05 +/- 0.20). Its 'structural value' is speculative, and in free mode it is nearly a no-op because the previous target is already popped 44 of 45 times. Do it only as infrastructure for later retraining, not as a gain. Check the per-step compute cost.\n\nFix 3 (give GNC the next target early) points the right way, since the free-mode gap sits entirely in the arrival state. But the only test (g2) was null (-0.05 +/- 0.17), and the 'far-side approach, 1.1 m out at 0.8 s' goal is an extrapolation artifact. The thing to copy is about 4 m/s^2 of lateral acceleration toward the next balloon in the last ~0.8 s. The upper-bound arithmetic assumes 11 hops per burn; we fly about 7.5, so it is about 0.6-1 pop, not +1.\n\nFix 4 (bend penalty in target selection) rests on the 'two thirds from sequence' split, which is not robust: it ranges from about one third to about two thirds depending on duplicates, the first-hop chord, and median vs mean. The gain is unproven.\n\nFix 5: the target-override losses are measured, so dropping override is supported. 'Do not pursue ZEM/ZEV' generalises from a single gated prototype with two kappa values; deprioritise it rather than rule it out.\n\nMy scripts and outputs are in ./dev/gnc2_diag/verify_chaining/: vhops.py, vsum.py, vextra.py, vbend.py, vside.py, vtgt.py, vhand.py, plus vhand_t05/t07/t09.json and .log. No existing file was modified."
+  }
+ },
+ {
+  "key": "guidance",
+  "finding": {
+   "hypothesis": "導引律效率與目標追蹤（ZEM N=2、t_go = stretch × 最短到達時間、瞄準氣球中心、每一跳只看一顆）。用 hop = T0 + excess 拆解：T0 是上一顆擊破瞬間、在全推力、推力方向可瞬間改變的理想下，到下一顆的最短到達時間；excess 是實際花的時間減掉 T0，也就是導引的效率損失。結果：strict 模式 excess 1.02 s，他們 0.41 s，差 0.61 s/跳，佔 strict 總差距 1.42 s/跳的 43%（dedup 平均）。這 0.61 s 分成三塊：跳躍開頭第一秒的轉向損失 0.27 s（原因是沒有末段交棒）、真正的擦身重繞 0.24 s（54 跳裡 2 次）、中段 0.16 s（stretch>1 時降推力）。末段 0.5 s 雙方一樣，是 0。模擬驗證：在 GNC 加入 0.5–0.7 s 的末段交棒後，strict 從 80 顆變 90–93 顆，每跳快 0.46–0.54 s，excess 從 1.02 降到 0.53。不過 free 模式下 policy 已經靠每 0.5 s 的決策提早切目標（lead 中位數 0.58 s），它的 excess 0.32 反而比他們的 0.41 小，所以 GNC 交棒在 free 幾乎沒有增益（scenario 1：45 對 45；scenario 4：74 對 73）。兩種模式剩下的差距都在 T0，也就是擊破當下的速度方向不利於下一顆：同樣的氣球對，把我們的速度換成他們的，T0 就從 2.64 降到 1.98，他們自己是 2.01。這屬於 hop geometry，不是追蹤本身的問題。",
+   "verdict": "moderate",
+   "seconds_per_hop": 0.61,
+   "claims": [
+    {
+     "claim": "每跳時間拆成 T0（上一顆擊破時的理想最短到達時間）加 excess（導引損失）。strict 比他們多 1.42 s/跳：T0 佔 0.81 s，excess 佔 0.61 s。free 的 excess 反而比他們小。",
+     "value_ours": "strict：3.66 = 2.64 + 1.02（n=54）；free：2.87 = 2.55 + 0.32（n=40）。不去重：strict 3.51 = 2.58 + 0.93，free 2.76 = 2.52 + 0.24",
+     "value_theirs": "2.24 = 1.83 + 0.41（n=112）；不去重 2.28 = 1.86 + 0.42",
+     "how_measured": "hops.py：取每對連續擊破。T1 用 chases.reach 算：固定方向全推力、考慮燃燒結束後滑行、氣球等速、命中容差 1.5 m，雙方共用同一條 a_thrust 曲線。重複的 seed 路線（12/13_Apex、16_SpaceBerry/18_Taoyuan，以及 free 模式同 seed 的局）去重。"
+    },
+    {
+     "claim": "同一對氣球（b_{k-1}→b_k，雙方都連續擊破，共 54 對）：我們每跳慢 1.20 s。T0 的差距完全來自擊破時的速度。",
+     "value_ours": "每跳 3.66 s（比值中位數 1.59；89% 的氣球對我們比較慢）；T0 2.64 s；在我們的位置換上他們的速度後 T0 = 1.98 s；excess 1.02 s",
+     "value_theirs": "每跳 2.46 s；T0 2.01 s；excess 0.45 s",
+     "how_measured": "t0_split.py：在我們擊破的時刻，用我們的位置加上他們擊破同一顆時的速度重算 T1，氣球取我們當下的位置。"
+    },
+    {
+     "claim": "excess 按跳躍內的階段拆開：主要差在開頭第一秒和中段，末段 0.5 s 沒有差別。",
+     "value_ours": "strict 的累積損失：0.5 s 時 0.32 → 1.0 s 時 0.46 → 擊破前 0.5 s 時 0.95（只看小於 8 s 的跳是 0.78）→ 最後 1.02。free：0.07 / 0.10 / 0.27 / 0.32",
+     "value_theirs": "0.10 / 0.19 / 0.35 / 0.41",
+     "how_measured": "loss_profile.py 與 loss_phase.py：每 0.05 s 算一次 L(t) = (t − ta) + T1(t) − T1(ta)。完美的最短時間飛行下 L 應為 0，擊破時 L 等於 excess。"
+    },
+    {
+     "claim": "跳躍開頭的損失來自沒有末段交棒：擊破瞬間機頭方向偏離下一顆的理想推力方向很多，要花很久才對準。",
+     "value_ours": "strict：偏差角中位數 37°，推力轉到 10° 以內要 0.85 s，交棒 0 次。free：30°、0.15 s；policy 在首顆之後的 41 次切換中，有 37 次發生在擊破之前，lead 中位數 0.58 s",
+     "value_theirs": "偏差角 18.5°，對準時間 0.12 s",
+     "how_measured": "loss_profile.py 用機體 z 軸，以及平滑後的 dv/dt − g，對照理想方向 unit(miss(T1))；handoff_stats.py 統計切換時機。"
+    },
+    {
+     "claim": "真正的擦身重繞很少，但每次代價很大。兩次都發生在末段 stretch 1.3 且 TGO 跳成掉頭解的時候。",
+     "value_ours": "strict 54 跳中 2 次，最近距離 5.15 m 與 2.05 m，共損失 12.7 s，攤平是 0.24 s/跳；free 40 跳中 0 次。兩次都是在離氣球 7.6–13 m、最接近點前 0.5–0.8 s 時 TGO 跳成掉頭解（10_SpaceY 那次推力降到 2.5–4.8 m/s²）",
+     "value_theirs": "112 跳中 0 次（擊破前 40 m 內沒有任何距離極小值）",
+     "how_measured": "chases.py 與 hops.py 找距離的局部極小值（大於 1.5 m、小於 6 m，且已鎖定該目標）；另外人工追了 TGO、F、STRETCH 的時序。"
+    },
+    {
+     "claim": "§59 所謂的「第二次 pass」多半其實是飛越，原因是抵達速度不對，不是追蹤失誤。",
+     "value_ours": "54 跳中有 5 跳（9%）：擊破時下一顆只在 16–22 m 外，卻以 10–19 m 的距離飛過去。我們每跳 4.21 s，T1 3.70，excess 只有 0.52",
+     "value_theirs": "同樣的氣球對 1.48 s；0 次飛越",
+     "how_measured": "hops.py 與上面的分析：距離局部極小值在 6–40 m 之間，且發生在上一顆擊破後 0.2–1.2 s 內。"
+    },
+    {
+     "claim": "末段「放棄」假象：GNC 規劃時要求正中心命中（tol 0），所以擊破前約 0.2 s，偏心但其實已經在 1.5 m 內的路徑會被判定「到不了」，TGO 跳成掉頭解，推力指令跟著大轉。",
+     "value_ours": "strict 62 顆中有 56 顆（90%）在擊破前 0.6 s 內出現 TGO 跳升（大於 +0.5 s），中位數在擊破前 0.19 s；擊破前最後 0.5 s 推力指令轉了 69°（中位數）；擊破時角速度 1.55 rad/s",
+     "value_theirs": "n/a（沒有他們的指令紀錄）",
+     "how_measured": "giveup.py；第二段比較用 sim_report / 內嵌分析跑 base 的模擬紀錄。"
+    },
+    {
+     "claim": "t_go 估計的品質：stretch=1 時開頭低估約 13%（沒算轉向時間），中段準確；0.8 要求的時間物理上做不到；1.3 是會一直往後退的時間窗，實際比最短時間多 40% 以上。",
+     "value_ours": "strict：s=1.0 時實際/計畫在追擊開始 1.13、追擊中段 1.02，TGO 每秒只減 0.89 s；s=0.8 時實際/計畫 1.41（實際/TGO 平均 1.22）；s=1.3 時實際/計畫 1.08，等於實際/TGO 1.43。純質點模擬（只有導引律）：s=1.0 恰好等於 T1；s=0.8 中位數 1.00；s=1.3 是 1.64×T1",
+     "value_theirs": "他們 hop/T1 中位數 1.18（同氣球對；我們是 1.28）",
+     "how_measured": "tgo_quality.py 在每一步比較 STRETCH×TGO 與實際剩餘時間；pointmass.py 用 120 組隨機幾何。"
+    },
+    {
+     "claim": "stretch（速度檔）是在拿「這一跳多花的時間」換「下一跳比較好的起始狀態」。強制單一檔位都更差。",
+     "value_ours": "平均 stretch 在 ≤0.95 / ≈1 / 1.05–1.2 / >1.2 的跳，excess 中位數分別是 0.43 / 0.49 / 1.00 / 1.07；上一跳 stretch ≤0.95 / ≈1 / >1.05 時，下一跳 T0 是 2.80 / 2.63 / 2.27。strict 擊破顆數：policy 自選 80，上限 1.0 為 72，強制 1.0 為 66（T0 升到 3.38），強制 1.3 為 60（excess 2.67）。strict 模式剛擊破後有 31% 的跳是用 1.3（free 是 12%）",
+     "value_theirs": "n/a",
+     "how_measured": "hops.py 依 s_mean 分組；sim.py 跑 fix_s=2、fix_s=3、smax=1.0，11 份 replay，strict 模式。"
+    },
+    {
+     "claim": "末段交棒（GNC 在預測最接近距離 ≤0.7 m 且 ≤τ 秒時，就轉向下一顆）是有效的導引律修正，最佳 τ 在 0.5–0.7 s；太早（1.0 s）會崩。",
+     "value_ours": "strict 擊破顆數：τ=0.2 為 81、0.3 為 90、0.5 為 90、0.7 為 93、1.0 為 57（base 80）。τ=0.7：每跳平均 2.97 s、中位數 2.72 s（base 3.51 / 3.41），excess 0.53，開頭 1 s 損失 0.13，81 次交棒全部穿過目標。τ=1.0：114 次交棒中 76 次打空。11 份 replay 裡 9 份變好、1 份變差",
+     "value_theirs": "每跳 2.24 s，excess 0.41，開頭 1 s 損失 0.19",
+     "how_measured": "sim.py 的 ho 參數，用 sim_report.py 與 handoff_stats.py 分析，並發不超過 4 個程序。"
+    },
+    {
+     "claim": "free 模式下，GNC 交棒對現在的 policy 幾乎沒有增益，因為 policy 自己已經在做。",
+     "value_ours": "scenario 1 在 5 個不同 seed：base 45、ho=0.3 仍是 45，其中 3 個 seed 的飛行完全相同。scenario 4 在 8 個 seed：base 73、ho=0.5 為 74，每跳 2.99 → 2.91 s；打空數不變（都是 9 次，全是 policy 自己放棄的）",
+     "value_theirs": "n/a",
+     "how_measured": "sim.py 加 free=1，scenario 4 用 --seeds 7100:7108。"
+    },
+    {
+     "claim": "其他效應都很小，或改了沒用：氣球漂移、瞄準點（我們瞄中心、他們擦邊）、目標切換的遲滯都不是關鍵。",
+     "value_ours": "等速外推的漂移誤差中位數 0.03–0.07 m，p90 ≤0.12 m。擊中偏移中位數：strict 0.14 m（87% 在 0.5 m 內），free 0.55 m。正中心與 1.5 m 半徑的 T1 相差 0.10–0.14 s。一致的擦邊瞄準版本（tolc=1）為 81 對 80：excess −0.30，但 T0 +0.38；只放寬 reach 容差的單純版 tol=1 為 66。目標切換：strict 放棄目標的 10 次全部發生在第一顆之前（照發射順序，共 13.5 s）；free 在 40 跳中放棄 4 次（≤0.16 s/跳）。只有約 50% 的導引步數推力飽和",
+     "value_theirs": "擊中偏移中位數 1.09 m（54% 大於 1.0 m）",
+     "how_measured": "extras.py、aim_offset.py，以及 sim.py 的 tol 與 tolc 變體。"
+    }
+   ],
+   "fixes": [
+    {
+     "change": "GNC v2 加入末段交棒：當前目標在「目前相對速度與加速度維持不變」下，預測最接近距離 ≤0.7 m 且在 ≤0.5 s 內（最多 0.7 s），就立刻改瞄下一顆（strict 取順序中的下一顆；free 則觸發 policy 重新決策，並把當前目標遮掉）；若那顆在預測最接近時刻後 0.15 s 仍然活著，就轉回去追。實作見 dev/gnc2_diag/guidance_law/sim.py 的 T.needs_decision 與 A.needs_decision。",
+     "expected_effect": "strict 基準 80 → 90–93 / 144 顆，每跳 −0.46 到 −0.54 s，開頭 1 s 損失 0.46 → 0.13–0.21 s。對現在的 free policy 約 0（+1/73，scenario 4）。重新訓練後，policy 不必再用 0.5 s 的決策粒度去學提早切目標，交棒時機也更準（GNC 版 lead 0.36–0.52 s，policy 版是 0.58 s，p90 0.81 s）。",
+     "risk": "τ=1.0 時會崩（57 顆，67% 打空），所以要留餘裕，建議 τ=0.5；scenario 4 在 0.5 s 驗過沒有增加打空。free 模式的「下一顆」要由 policy 決定，policy 需要在新動力學下重新訓練或驗證；它自己的提早切換會與 GNC 交棒互相作用。"
+    },
+    {
+     "change": "禁止末段放棄：擊破前約 0.6 s 內，只要預測最接近距離還在命中半徑內，TGO 就不准跳成掉頭解。做法是保持指令，或直接交棒；不要只放寬 _reach_time 的容差，也不要只做擦邊瞄準。",
+     "expected_effect": "消除 90% 擊破前都出現的末段推力指令大轉（中位數 69°）和擊破時 1.55 rad/s 的角速度。兩次真正的擦身重繞（0.24 s/跳，樣本只有 2 次）都跟它有關。這個效果大部分已經包含在 τ≥0.5 的交棒增益裡。",
+     "risk": "低，但實作方式很關鍵：單純版 tol=1 是 −14 顆；一致的擦邊版 tolc=1 是 ±0（這一跳的 excess −0.30，但 T0 +0.38）。"
+    },
+    {
+     "change": "保留 stretch，但它現在「每步重估 t_go = s·T1 加上降推力」的做法，應改成明確以抵達狀態為目標的導引：兩顆目標一起考慮，讓擊破時的速度朝向下一顆，或瞄氣球朝下一顆那一側的邊緣。",
+     "expected_effect": "這是剩下最大的一塊：交棒之後 strict 的 T0 仍是 2.53 s，他們 1.83 s，差 0.70 s/跳；同氣球對的 T0 差距 0.63 s 完全來自抵達速度。現在的 1.3 檔只是很粗糙的抵達塑形：下一跳 T0 2.27 對 2.80，但這一跳 excess 多約 0.6 s，而且在質點模型裡實際飛了 1.64×T1。上限估計 0.6–0.7 s/跳。",
+     "risk": "高：這是新導引律，policy 必須重新訓練（§61、§83 已經顯示 policy 跟舊的飛行共同適應）。這部分屬於 hop geometry，要跟那邊的診斷一起設計。強制 s=1.0 是 −14 顆、強制 1.3 是 −20 顆、上限 1.0 是 −8 顆，所以不能直接拿掉 stretch。"
+    },
+    {
+     "change": "不要花力氣在這些地方：nav_N、只做擦邊瞄準、漂移模型、GNC 的目標切換遲滯。",
+     "expected_effect": "省下實驗時間：漂移誤差小於 0.12 m；擦邊瞄準 ±0；切換遲滯 ≤0.16 s/跳；N 只在約 50% 未飽和的步數起作用，§83 掃過 N=3 / 1.7 都變差。",
+     "risk": "無"
+    }
+   ],
+   "scripts": [
+    "./dev/gnc2_diag/guidance_law/chases.py",
+    "./dev/gnc2_diag/guidance_law/hops.py",
+    "./dev/gnc2_diag/guidance_law/summary.py",
+    "./dev/gnc2_diag/guidance_law/tgo_quality.py",
+    "./dev/gnc2_diag/guidance_law/loss_profile.py",
+    "./dev/gnc2_diag/guidance_law/loss_phase.py",
+    "./dev/gnc2_diag/guidance_law/t0_split.py",
+    "./dev/gnc2_diag/guidance_law/extras.py",
+    "./dev/gnc2_diag/guidance_law/aim_offset.py",
+    "./dev/gnc2_diag/guidance_law/giveup.py",
+    "./dev/gnc2_diag/guidance_law/pointmass.py",
+    "./dev/gnc2_diag/guidance_law/presteer.py",
+    "./dev/gnc2_diag/guidance_law/sim.py",
+    "./dev/gnc2_diag/guidance_law/sim_report.py",
+    "./dev/gnc2_diag/guidance_law/handoff_stats.py",
+    "./dev/gnc2_diag/guidance_law/queue.sh",
+    "./dev/gnc2_diag/guidance_law/queue5.sh",
+    "./dev/gnc2_diag/guidance_law/queue6.sh"
+   ],
+   "caveats": "1）資料重複：11 份 replay 只有 5 個 seed。12/13_Apex，以及 16_SpaceBerry/18_Taoyuan 在 strict 模式下前面大部分跳完全相同；free 模式同 seed 的局完全一樣。每跳統計都做了去重（strict 54 跳、他們 112 跳、free 40 跳），但擊破總顆數沿用 11 份的總和，才能跟 80/144 的基準比較。\n2）T1/T0 是質點模型（瞬間轉向、無阻力、全推力 a_thrust(t) 取我們估計值的中位數、容差 1.5 m）。它量的是「相對理想」的損失，轉向成本會算進 excess。\n3）「擦身重繞 0.24 s/跳」只來自 2 次事件，統計力很弱。交棒後重繞歸零（ho3 為 0、ho5 為 1），但無法確認是因果。\n4）模擬都是 scenario 1 的 strict 順序，速度檔仍由目前的 policy 決定。policy 與舊的飛行共同適應，所以交棒或新導引律在重新訓練後的效果可能不同。free 與 scenario 4 只測了現有 policy（5 個與 8 個 seed），樣本小。\n5）ho7 與 ho10 之間有明顯斷崖（93 → 57 顆），在雜訊下 0.7 s 可能太貼近斷崖；scenario 4 只驗過 0.5 s。\n6）tol 與 tolc 的負面或中性結果，只代表我這兩種實作不好，不代表「利用 1.5 m 半徑」這個想法沒價值：他們的擊中偏移中位數 1.09 m，可能是朝下一顆那側擦邊，那屬於抵達塑形。\n7）presteer.py 的「偏離方向是否朝向下一顆」指標結果不明確，沒有拿來作結論；只引用了擊破時速度方向對下一顆的夾角：他們中位數 25°，我們 38–40°。\n8）機器負載很高（load 約 45），模擬全部背景執行，並發不超過 4 個程序，共跑了 186 局；原有檔案沒有任何修改。"
+  },
+  "verdict": {
+   "checks": [
+    {
+     "claim": "C1 每跳 = T0 + excess：strict 3.66 = 2.64 + 1.02（n=54），free 2.87 = 2.55 + 0.32（n=40），他們 2.24 = 1.83 + 0.41（n=112）；strict 多出的 1.42 s/跳 = T0 0.81 + excess 0.61",
+     "status": "CONFIRMED",
+     "corrected_value": "自己的推力模型（取他們 |dv/dt−g| 的 p99 包絡，隨時間變化，二重積分）：strict 3.66 = 2.53 + 1.12；free 2.87 = 2.48 + 0.40；他們 2.24 = 1.79 + 0.45。差距 1.42 = T0 0.74 + excess 0.67。strict−他們 excess 差距的 95% CI 是 [0.36, 1.12]（重尾，因為有 2 跳是重繞）；拿掉那 2 跳剩 0.43。free−他們 = −0.05，CI [−0.20, +0.11]",
+     "note": "每跳時間和 n 完全重現。T0 與 excess 的切分會隨推力模型差約 0.07 s，屬於模型不確定度。另有一個小 bug：他們有 2 跳在前一顆擊破時，下一顆氣球還在地上（S=0），T0 用的是地面位置，漂移誤差最大 7.3 m。排除後他們是 2.25 = 1.80 + 0.45，影響可忽略。frame 檢查通過：燃燒段機體 z 軸與平滑後 dv/dt−g 的夾角中位數 2–4°。"
+    },
+    {
+     "claim": "C2 同樣的氣球對（54 對）：我們每跳慢 1.20 s（3.66 對 2.46），89% 較慢，比值中位數 1.59；T0 的差距完全來自擊破時的速度（2.64 → 換上他們的速度 1.98；他們自己 2.01）",
+     "status": "CONFIRMED",
+     "corrected_value": "n=54，89%，比值 1.59，3.66 對 2.46，都完全一致。T0：2.53 → 1.93（換速度），他們 1.96。每跳差距 1.19 = T0 0.58 + excess 0.62。T0 差距裡速度佔 0.60，其餘 −0.03；反向交換（他們的位置配我們的速度）+0.70",
+     "note": "我們擊破時速度 16.4 m/s，他們 18.9；速度方向差平均 27.5°。同一顆氣球我們平均晚 3.4 s 擊破，擊破位置差 27 m，但交換測試已經把這點考慮進去。"
+    },
+    {
+     "claim": "C3 excess 的階段剖面：strict 0.32/0.46/0.95/1.02（小於 8 s 的跳：0.78），free 0.07/0.10/0.27/0.32，他們 0.10/0.19/0.35/0.41；差在開頭與中段，末段 0.5 s 沒有差別",
+     "status": "CONFIRMED",
+     "corrected_value": "strict 0.35/0.52/1.04/1.12（小於 8 s：0.87，n=53）；他們 0.11/0.21/0.38/0.45；free 0.09/0.14/0.34/0.40。差距：開頭 1 s 0.31，中段 0.35（其中重繞 0.235，其餘約 0.12），末段 0.01",
+     "note": "剖面值在 0.03–0.09 內重現。但摘要的三塊拆法 0.27 + 0.24 + 0.16 = 0.67，比總數 0.61 大：『小於 8 s』只濾掉 1 跳（10_SpaceY，11.7 s），11_Mochi 那次重繞（7.3 s，損失 3.5 s，約 0.065 s/跳）同時被算進 0.24 和中段 0.16，重複計算。另外中段損失在 s≈1 的跳平均 0.90，就是被這兩次重繞拉高的（兩跳的 s_mean 是 1.01 與 1.05）。"
+    },
+    {
+     "claim": "C4 開頭損失來自沒有末段交棒：strict 擊破時機頭偏離 37°、轉到 10° 以內要 0.85 s，他們 18.5°、0.12 s；free 30°、0.15 s，policy 41 次切換中 37 次在擊破前，lead 0.58 s",
+     "status": "REFUTED",
+     "corrected_value": "偏差角重現（39 / 19 / 30°）。對準時間的比較有選擇偏誤：loss_phase.py 的中位數只算『曾經對準』的跳，NaN 被丟掉；他們 112 跳中有 48 跳（43%）從來沒有進到理想方向 10° 內。未對準的跳以整跳時長計的話，中位數是他們 0.82 s、strict 1.07 s、free 0.40 s。0.5 s 內對準的比例：他們 42%、strict 9%、free 65%。free 提早切換：40 跳中 38 跳（95%），lead 中位數 0.57 s（確認）",
+     "note": "strict 的『0 次交棒』是 strict teacher 的構造結果：pick() 永遠回傳他們順序裡第一顆還活著的氣球，所以目標只在擊破時才會換，54 跳中提早切換 0 次。它反映的是量測框架，不是 GNC 缺陷；free policy 已經在做這件事。開頭損失也跟 stretch 降推力混在一起：s>1.05 的跳 L(1.0) 是 0.69，其他約 0.40。另外也跟姿態轉速假說重疊：擊破時角速度我們 1.50 rad/s，他們 0.59。"
+    },
+    {
+     "claim": "C5 真正的擦身重繞：strict 54 跳中 2 次（5.15 m、2.05 m），共損失 12.7 s，攤平 0.24 s/跳；他們 0/112，free 0/40；都發生在 s=1.3 且 TGO 跳成掉頭解時",
+     "status": "CONFIRMED",
+     "corrected_value": "2 次，5.15 / 2.05 m，12.71 s，0.235 s/跳（其中 10_SpaceY 一次就佔 9.2 s）；他們 0，free 0。兩次在 TGO 跳升前，預測最接近距離（保持指令力）分別是 0.85 m 與 1.42 m，都還在 1.5 m 半徑內；1 s 前則是 0.08–0.16 m。當時 |F| 從 6–9.5 跳到 12–13.7 m/s²",
+     "note": "放棄時預測最接近距離仍在命中半徑內，所以跟修正 2 的機制對得上。但 n=2 且由單一極端值主導，統計力很弱。"
+    },
+    {
+     "claim": "C6 §59 的第二次 pass 多半是飛越：54 跳中 5 跳（9%），下一顆在 16–22 m 外，以 10–19 m 飛過；每跳 4.21 s，T1 3.70，excess 0.52",
+     "status": "CONFIRMED",
+     "corrected_value": "5 跳，d0 16.1–21.9 m，最接近距離 10.4–19.1 m；每跳 4.21 s；T0 3.49，excess 0.72（推力模型不同）；發生時間 0.23–1.26 s（有一跳略超出他們寫的 0.2–1.2 s）",
+     "note": "他們 0 次飛越，確認。"
+    },
+    {
+     "claim": "C7 末段放棄假象：strict 90% 的擊破在最後 0.6 s 內出現 TGO 跳升（中位數在擊破前 0.19 s）；指令轉 69°；擊破時角速度 1.55 rad/s",
+     "status": "CONFIRMED",
+     "corrected_value": "63 次擊破中 57 次（90%），中位數擊破前 0.19 s；F 在最後 0.5 s 的轉角中位數 53°（69° 其實是『跳升前到擊破前一步』約 0.19 s 的轉角，說明文字寫成 0.5 s 不準）；擊破時角速度中位數 1.50 rad/s，他們 0.59 rad/s",
+     "note": "這些擊破最後都成功了；除了那 2 次重繞，沒有證據顯示它單獨造成時間損失。tol1（−14 顆）和 tolc1（+1 顆）都沒有顯示獨立增益。"
+    },
+    {
+     "claim": "C8 t_go 品質：s=1.0 開頭實際/計畫 1.13、中段 1.02、TGO 每秒減 0.89；s=0.8 實際/計畫 1.41；s=1.3 實際/TGO 1.43；質點模擬 s=1.0 = T1、s=0.8 中位數 1.00、s=1.3 = 1.64×T1",
+     "status": "CONFIRMED",
+     "corrected_value": "實飛：s=1.0 開頭 1.10、中段 0.99，dTGO/dt −0.87；s=0.8 開頭實際/計畫 1.34，實際/TGO 1.07；s=1.3 實際/計畫 1.06，實際/TGO 1.38–1.44。自己寫的質點模擬：s=1.0 為 1.01、s=1.3 為 1.60–1.64（穩健）。s=0.8 在他們的幾何分佈下是 1.03，但目標在任意方向、或有接近速度時是 1.41–1.44",
+     "note": "s=0.8 的質點結果高度依賴幾何分佈，這一項本身應標成不確定；其他數字都確認。另外檢查過『不准向下推』(f_z≥1) 的限制：雙方燃燒時間中只有 1–2% 會碰到，不影響結論。"
+    },
+    {
+     "claim": "C9 stretch 是拿這一跳的時間換下一跳的起始狀態：excess 中位數 0.43/0.49/1.00/1.07；上一跳 stretch 分組後的下一跳 T0 2.80/2.63/2.27；擊破數 80/72/66/60；strict 剛擊破後 31% 用 1.3（free 12%）",
+     "status": "CONFIRMED",
+     "corrected_value": "excess 中位數 0.55/0.65/1.03/1.10；下一跳 T0 2.72/2.55/2.19；從 S 重數擊破數：80/72/66/60，完全一致；s10 的 T0 3.20（原 3.38）；s13 的 excess 2.76（原 2.67）；剛擊破後用 1.3 的比例 strict 29%、free 16%",
+     "note": "趨勢一致；數值差異來自推力模型與取樣的步數。"
+    },
+    {
+     "claim": "C10 末段交棒 τ=0.5–0.7：strict 80 → 90–93；τ=0.7 每跳 2.97/2.72，excess 0.53，開頭 1 s 損失 0.13，81 次交棒全部穿過；τ=1.0 崩到 57；11 份 replay 中 9 份變好",
+     "status": "CONFIRMED",
+     "corrected_value": "從 S 重數：ho2 81、ho3 90、ho5 90、ho7 93、ho10 57。base 的 sim 與 data 的 strict 逐步相同（最大 |R| 差 0）。ho7 去重後每跳平均 3.06、中位數 2.75（base 3.66/3.49）；同氣球對 n=45：−0.65 s（中位數 −0.58）；excess 0.63，L(1.0) 0.20，T0 2.43；首顆之後 81 次交棒全部穿過目標",
+     "note": "只在 strict 模式成立。11 份 replay 只有 5 個 seed，12/13_Apex 與 16_SpaceBerry/18_Taoyuan 的飛行重疊，『9/11 變好』有重複計算；10_CoolBa 是 −2。0.7 離 1.0 的斷崖很近。"
+    },
+    {
+     "claim": "C11 free 模式下交棒幾乎沒有增益：scenario 1 為 45 對 45，scenario 4 為 73 對 74",
+     "status": "CONFIRMED",
+     "corrected_value": "從 S 重數：fho3 45 = base free 45（5 個 seed）；f4base 73、f4ho5 74（8 個 seed）。free 首顆之後 41 次切換，4 次放棄",
+     "note": "再加上 free 的 excess 與他們一樣（−0.05，CI [−0.20, 0.11]），代表對實際部署的 agent 而言，導引效率不是差距來源。"
+    },
+    {
+     "claim": "C12 其他效應都很小：漂移中位數 0.03–0.07 m、p90 ≤0.12 m；擊中偏移 strict 0.14 m、free 0.55 m、他們 1.09 m；tolc1 81 顆（excess −0.30、T0 +0.38）；tol1 66 顆；約 50% 的步數推力飽和",
+     "status": "CONFIRMED",
+     "corrected_value": "漂移中位數 0.028/0.068/0.044 m，p90 0.07–0.12 m（他們有 2 跳的目標還在地上，最大 7.3 m）；偏移 strict 0.14（87% <0.5 m）、free 0.53、他們 1.07（53% >1 m）；tolc1 81 顆（excess −0.27、T0 +0.35）；tol1 66 顆；推力飽和 strict 52%、free 57%",
+     "note": "全部重現。"
+    }
+   ],
+   "seconds_per_hop_assessment": "這個 0.61 s/跳可以重現，但它是 strict 模式下的 excess 差距（我算出 0.67，95% CI [0.36, 1.12]），不能當成『導引律能解釋的秒數』。原因如下：\n(1) 實際部署的是 free 模式。那裡的 excess 差距是 −0.05 s/跳（CI [−0.20, +0.11]），模擬也顯示交棒在 free 沒有增益（45 對 45、73 對 74）。所以對真正的 agent，這個假說解釋約 0 s/跳；free 的差距全部在 T0（2.48 對 1.79）。\n(2) excess 的定義就是『所有不屬於 T0 的時間』，會和其他假說重複計算：\n - 開頭約 0.3 s 的損失，包含機頭轉向時間（姿態假說；擊破時角速度 1.50 對 0.59 rad/s），也包含 stretch 1.3 的降推力（推力利用假說；s>1.05 的跳 L(1.0) 是 0.69，其他約 0.40）。\n - 這一塊大部分是 strict teacher 的構造結果：它不可能提早切換，54 跳中 0 次；free 則是 95% 的跳會提早切。\n(3) 0.24 s/跳的重繞只來自 2 個事件，其中一次就佔 9.2 s；拿掉之後 strict 差距是 0.43。\n(4) 摘要的三塊拆法 0.27 + 0.24 + 0.16 = 0.67 超過總數 0.61，因為 11_Mochi 那次重繞被算了兩次。\n合理的說法：strict 模式中真正屬於導引律、而且不和其他假說重疊的，是末段放棄或重繞的尾巴，約 0.1–0.24 s/跳，而且只有 2 次；對 free agent 約 0。其餘時間屬於 hop geometry（抵達速度，0.58–0.75 s/跳）。",
+   "overall": "partly",
+   "fix_assessment": "修正 1（末段交棒）：在 strict 模式下證據扎實。擊破數 80 → 93，同氣球對每跳 −0.6 s，81/81 次穿過目標。但對現在部署的 free policy，證據是約 0，因為 policy 已經自己提早切換（lead 0.57 s）。所以預期效果應該寫成『重新訓練前約 0』；它的價值在於提供比較乾淨的機制，讓以後重新訓練時用得上。τ=1.0 會崩到 57 顆，0.7 離斷崖很近，而 scenario 4 只驗過 0.5，建議取 0.5。優先度低到中。\n修正 2（禁止末段放棄）：機制有部分支持。兩次重繞在 TGO 跳升前，預測最接近距離是 0.85 m 與 1.42 m，都在 1.5 m 內，所以規則會觸發。但只有 2 個事件，free 的 40 跳裡一次也沒有；另外 90% 的擊破雖然也有跳升，最後都照樣擊破了；tol1（−14）與 tolc1（+1）也沒有顯示獨立增益。它應該當成低成本的 A/B 變體來測（預測最接近距離 ≤1.5 m 時保持指令），不能先宣稱有增益；預期在 strict 最多 0.1–0.2 s/跳，free 約 0。\n修正 3（抵達狀態塑形）：這是證據最強指向的地方。同氣球對的 T0 差距全部來自擊破時的速度（0.60 / 0.58），free 的差距也全部在 T0。但這屬於 hop geometry 假說，不是這個假說的秒數。0.6–0.7 s/跳是樂觀上限：交換測試假設我們能拿到他們的抵達速度，而且不增加上一跳的 excess；stretch 1.3 的資料顯示這個代價真實存在。\n修正 4（不要在 N、漂移、擦邊瞄準、切換遲滯上花力氣）：與證據一致（漂移 p90 ≤0.12 m、tolc1 ±0、free 放棄 4/41、推力飽和約 50%）。\n結論：這些修正在『strict 框架內』成立，但把 0.61 s/跳當成 GNC v2 在導引律上的預期收益會高估；對實際 agent，建議把資源放在抵達狀態塑形與重新訓練，而不是導引律本身。所有驗證腳本都在 ./dev/gnc2_diag/verify_guidance/（vg.py、hoptab.py、pairs.py、profile.py、passes.py、giveup_chk.py、tgo_chk.py、simcheck.py、pm.py、pm2.py）。"
+  }
+ },
+ {
+  "key": "regime",
+  "finding": {
+   "hypothesis": "FLIGHT REGIME AND LAUNCH PHASE: the slow launch (4.0 s for them vs 6.7 s strict to the first pop), our near-vertical launch attitude, the altitude/energy regime over the burn, gravity losses, the ground-avoidance rules (min_alt, never thrust downward) and the end of burn / coasting explain part of our pop deficit.",
+   "verdict": "moderate",
+   "seconds_per_hop": 0.1,
+   "claims": [
+    {
+     "claim": "The launch and end phases shorten our active pop window (first pop to last pop) by 5.9 s per run. At their pop period of 2.31 s that is about 2.5 pops/run, or 44% of the 5.8 pops/run strict deficit. These phases sit outside the time between pops, so they explain almost none of the 1.2 s median hop gap directly.",
+     "value_ours": "strict: first pop 6.22 s, last pop 28.24 s, window 22.02 s, 6.27 hops/run, period 3.51 s; free: 5.42 / 28.98 / 23.56 s, period 2.76 s",
+     "value_theirs": "first pop 4.68 s, last pop 32.55 s, window 27.87 s, 12.09 hops/run, period 2.31 s (means over 11 runs)",
+     "how_measured": "phases.py on data/gnc2: pop times minus launch time (first row with a rocket state); period = sum of windows / sum of hops"
+    },
+    {
+     "claim": "Pops lost by phase (sum over 11 runs, their minus ours). Most strict pops are lost mid-burn. For free, the loss is mid-burn plus after burnout; free is actually ahead of them at t+10 s.",
+     "value_ours": "strict 2/14/64/0 (0-5 s / 5-10 s / 10-30 s / after 30 s); free 4/25/75/1",
+     "value_theirs": "9/15/105/15; deficit vs strict 7/1/41/15, vs free 5/-10/30/14",
+     "how_measured": "phases.py: histogram of pop time since launch, 5 s bins"
+    },
+    {
+     "claim": "The strict first-pop gap is mostly seed foreknowledge, not flight quality. In 9 of 11 runs their first balloon was still on the ground at launch. In 5 runs (2 distinct seeds: 1957083 in 4 replays, seed 0 by Yaka) their rocket was 2.0-5.1 m from that balloon's ground spot at the moment it was released, and popped it 0.17-0.85 s later at 1.3-6.4 m altitude. The release order is a hidden per-seed shuffle and cannot be observed. These 5 runs account for 16.1 s of the 16.9 s summed first-pop gap (95%).",
+     "value_ours": "strict: 9.2-35 m away at release, popped 2.75-4.39 s after release at 16.8-25.4 m altitude",
+     "value_theirs": "2.0-5.1 m away at release, popped 0.17-0.85 s after release, 6 such pops in total",
+     "how_measured": "first_pop.py and young.py: release = first step with status >= 1; rocket-to-balloon distance at that step"
+    },
+    {
+     "claim": "Given foreknowledge, our GNC matches their first-pop times. With their launch attitude plus a phantom target 2 m above the unreleased balloon (variant 'know'), our first pop comes at 2.65 / 2.65 / 3.71 / 2.14 s, similar to or faster than their times. The 2 Apex runs got worse (8.37 s): the rocket overshot the fixed phantom and a balloon rising at ~6 m/s outran it (thrust/weight 1.2 gives only ~2 m/s^2 net upward acceleration).",
+     "value_ours": "know: Taoyuan 2.65, SpaceBerry16 2.65, Yaka 3.71, SpaceBerry14 2.14 s (base 5.23 / 5.23 / 7.04 / 6.67 s)",
+     "value_theirs": "2.61 / 3.25 / 4.02 / 3.99 s",
+     "how_measured": "sim.py variant know (strict order, their launch time, subclass that only edits the agent's copy of the observation), compare_sim.py"
+    },
+    {
+     "claim": "Launch attitude: they launch tilted toward their first balloon; our strict teacher always launches vertically (decide_launch att=0) and our free policy launches at about 88 deg.",
+     "value_ours": "strict 90.0 deg in 11/11 runs; free median 87.9 deg",
+     "value_theirs": "median 68.4 deg (61.5-77.7; one run vertical); heading within 0-19 deg of the first balloon's bearing in 10/10 tilted launches",
+     "how_measured": "profile.py: body z axis from the first live quaternion; bearing from the pad to the balloon's position at pop"
+    },
+    {
+     "claim": "Giving the strict flight their exact launch attitude adds 10 pops. A general rule (68 deg toward the balloons below 10 m) adds 5. The effect only shows when we follow their target order.",
+     "value_ours": "strict base 80; att 90 (6 runs up, 0 down; first pop mean 6.22 -> 5.51 s; pops by t+10 s 16 -> 19); low68 85 (3 up, 0 down)",
+     "value_theirs": "144 (pops by t+10 s: 24)",
+     "how_measured": "sim.py strict variants att and low68; base reproduces data/gnc2 exactly (80, identical pop times). Noise floor from 0.5 deg launch jitter (4 headings): totals 80-82, SD 0.7. That floor underestimates chaos after big changes: SpaceY swung 5 -> 7 under jitter"
+    },
+    {
+     "claim": "With our own policy choosing targets, launch attitude does nothing, consistent with DECISION_LOG section 91 (attitude < 0.1 pops over 43k episodes).",
+     "value_ours": "free: base 105, low68 103, low75 104 (unique seeds: 45 / 46 / 47)",
+     "value_theirs": "n/a",
+     "how_measured": "sim.py free variants low68 / low75 (existing launch_incl kwarg, heading from _low_heading)"
+    },
+    {
+     "claim": "After the launch, the altitude/energy regime does not separate us from them. Our free policy flies as fast as they do and higher.",
+     "value_ours": "strict: mean speed 13.9 m/s, altitude 100 m, energy at burnout 2514 J/kg, f.v 82 W/kg; free: 17.1 m/s, 134 m, 3625 J/kg, 122 W/kg",
+     "value_theirs": "17.4 m/s, 124 m, 3031 J/kg, 95 W/kg",
+     "how_measured": "profile.py / regime.py over t+0-30 s; specific force = dv/dt - g - drag (still air)"
+    },
+    {
+     "claim": "Gravity cost of climbing is small and does not explain hop time: a climbing hop costs about 0.007 s per metre climbed for them. Time spent below the next balloon while climbing slower than it is the same for both.",
+     "value_ours": "strict: median climb per hop 29.4 m, below-and-losing 8% of burn; free 27.6 m, 5%",
+     "value_theirs": "median climb per hop 16.3 m (0.007 s/m x 13 m = 0.09 s); below-and-losing 7%",
+     "how_measured": "regime.py (least-squares hop dt ~ climb + descent + straight distance over hops within the burn); below.py"
+    },
+    {
+     "claim": "Thrust usage is essentially the same for both.",
+     "value_ours": "strict: |f| / full-thrust accel 0.95, unused thrust 0.78 m/s^2; commanded throttle mean 0.91",
+     "value_theirs": "0.96, unused thrust 0.55 m/s^2",
+     "how_measured": "profile.py / regime.py; full-thrust accel = 1080 N / mass from given parameters (liquid flow 0.425 kg/s), cross-checked against our logged a_thrust (11.9 -> 14.0 m/s^2)"
+    },
+    {
+     "claim": "The min_alt ground-avoidance rule never fires.",
+     "value_ours": "0.00% of burn steps with altitude < 3 m and vz < 0 (strict and free)",
+     "value_theirs": "they spend 10% of the burn below 5 m, almost all of it in the first 6 s (after t+6 s: 0.2%)",
+     "how_measured": "profile.py / young.py from R"
+    },
+    {
+     "claim": "The 'never thrust downward' clamp barely matters. It binds 6% of strict burn steps, mostly in the last 2 s of the burn; relaxing it globally changes little.",
+     "value_ours": "clamp binds 5-6% of strict steps (44% of those at t+28-30 s) and 1-2% of free steps (66% at t+28-30 s); relaxed to f_z >= -3 m/s^2: 82 vs 80 pops (+1 each in 2 runs of the same flight)",
+     "value_theirs": "f_z < 1 m/s^2 in 2% of burn (median 0%)",
+     "how_measured": "logged F_z == 1.0 means the clamp is binding; sim.py variant nodown (subclassed _saturate)"
+    },
+    {
+     "claim": "Pops after burnout are a real gap: 10% of their pops. 10 of their 15 come within 2.2 s of burnout.",
+     "value_ours": "strict 0 / 80, free 1 / 105",
+     "value_theirs": "15 / 144 (1.36 per run; at +0.03 to +6.5 s after burnout)",
+     "how_measured": "phases.py: pops with t - launch > 30 s (burnout is abrupt at 30.0 s: |f| drops from 13.9 to 3.3 m/s^2)"
+    },
+    {
+     "claim": "We stop popping earlier before burnout, and our last targets are near-missed just after burnout. In the last seconds our target was reachable before burnout in only 5% (strict) / 1% (free) of steps.",
+     "value_ours": "last pop to burnout: 1.76 s strict, 1.23 s free (mean); near misses of the chased target 2.2-4.7 m at +0.4-1.5 s after burnout in 4/11 strict and 5/11 free flights (free: 2 distinct seeds)",
+     "value_theirs": "last pop to burnout 0.77 s; 15 post-burnout near misses at 1.5-4 m plus 15 hits",
+     "how_measured": "tail.py (TGO x STRETCH vs burn left); phases.py (per-balloon minimum distance after burnout)"
+    },
+    {
+     "claim": "The coast=1 terminal guidance is ill-conditioned just before burnout. As burn left goes to 0 the commanded force blows up, so its direction swings and the clamp saturates. After burnout the path leaves the point-mass model by metres.",
+     "value_ours": "free CoolBa: f goes from (4.4, -1.8, 8.3) at t+29.5 s to (-0.3, -13.9, 0.2) at t+29.98 s, throttle 0.63-0.91; point-mass error after burnout 0.3-1.2 m at +1 s, 1.0-3.2 m at +2 s, 2.1-5.7 m at +3 s",
+     "value_theirs": "their error 0.9 / 2.9 / 6.0 m at +1 / +2 / +3 s, yet they hit 10 balloons within 2.2 s of burnout; body-velocity angle at burnout median 59 deg (ours 36 strict / 27 free)",
+     "how_measured": "coast_pred.py: propagation with gravity + drag (Cd 0.25, air moving at the balloons' median horizontal velocity) from the burnout state vs the actual R; per-step f from the logs"
+    }
+   ],
+   "fixes": [
+    {
+     "change": "GNC v2 end-of-burn mode ('burnout-state targeting'). In the last ~2 s of burn, when the policy's current target is only reachable ballistically, compute the burnout velocity needed for a ballistic hit within at most 2 s after burnout (gravity + drag with the bwind-4 wind + a fitted post-burnout aero term). Steer with f = (v_needed - v) / burn_left (capped), freeze the thrust direction for the last 0.2-0.3 s, and allow f_z < 1 m/s^2 only in this mode. Keep the policy's target: no planner takeover, which was the coast=2 failure in DECISION_LOG section 75.",
+     "expected_effect": "Convert about half of the observed 2.2-4.7 m near misses and cut the pre-burnout dead time from 1.2-1.8 s toward their 0.8 s: roughly +0.3 to +0.8 pops/run on these seeds. Upper bound is their 1.36 post-burnout pops/run plus 1 s of dead time. Measure with post-burnout pops and last-pop-to-burnout time in strict and free runs.",
+     "risk": "Medium. The section 75 coast planner lost 0.33 pops/run by pre-empting targets. Post-burnout errors grow to 6 m at +3 s, so only aim at most 2 s past burnout. Scenario 4 gusts and actuator lag add error. The policy is co-adapted to the old GNC, so judge it after a retrain or on a fixed-target benchmark, not a fixed-policy sweep."
+    },
+    {
+     "change": "Fit the post-burnout non-gravity acceleration (about 3 m/s^2 for about 2 s, lift from angle of attack) as a function of body-to-relative-wind angle and speed, from our logged flights. Use it in the end-of-burn mode. Optionally align the body with the relative wind in the last 0.5 s when the hit tolerance allows.",
+     "expected_effect": "Cuts the post-burnout prediction error (now 1-3 m at +1-2 s) below the 1.5 m balloon radius. This is what makes the end-of-burn mode work.",
+     "risk": "Low as a model; medium if alignment is forced, because at max_rate 2.5 rad/s the rocket cannot turn in time (section 75: only reached 74 deg) and alignment costs aim."
+    },
+    {
+     "change": "Launch attitude: no GNC work. Leave it to the policy (the attc head, 55-90 deg). Do not hand-force a tilted launch.",
+     "expected_effect": "About 0 for our own policy (free: 105 / 103 / 104 pops for policy choice / 68 deg / 75 deg). Worth +5 to +10 of 80 strict pops only when flying their target order.",
+     "risk": "Low. Forcing a tilt without a retrain changes nothing (free) and could interact with the learned early targets."
+    },
+    {
+     "change": "Ground rules: keep min_alt = 3 and the global 'never thrust downward' clamp. Relax the clamp only inside the end-of-burn mode above.",
+     "expected_effect": "About 0 overall (min_alt fires 0% of the time; a global relaxation gave +2/80, within chaos). The terminal relaxation serves the end-of-burn mode.",
+     "risk": "Low. A global relaxation raises ground-strike risk under scenario 4 noise for no measured gain."
+    },
+    {
+     "change": "Benchmark hygiene: do not try to reproduce their launch skim or pre-positioning, and report the strict benchmark also from the first pop onward (or exclude pre-positioned first pops).",
+     "expected_effect": "Avoids chasing about 1.5 s/run of launch gap (16.1 of 16.9 summed seconds) that comes from their seed-specific foreknowledge of the release schedule, which does not exist in random-seed qualification.",
+     "risk": "None. It changes the measurement, not the agent."
+    }
+   ],
+   "scripts": [
+    "./dev/gnc2_diag/launch_regime/common.py",
+    "./dev/gnc2_diag/launch_regime/profile.py",
+    "./dev/gnc2_diag/launch_regime/first_pop.py",
+    "./dev/gnc2_diag/launch_regime/phases.py",
+    "./dev/gnc2_diag/launch_regime/young.py",
+    "./dev/gnc2_diag/launch_regime/regime.py",
+    "./dev/gnc2_diag/launch_regime/below.py",
+    "./dev/gnc2_diag/launch_regime/tail.py",
+    "./dev/gnc2_diag/launch_regime/coast_pred.py",
+    "./dev/gnc2_diag/launch_regime/sim.py",
+    "./dev/gnc2_diag/launch_regime/compare_sim.py",
+    "./dev/gnc2_diag/launch_regime/profile.txt",
+    "./dev/gnc2_diag/launch_regime/first_pop.txt",
+    "./dev/gnc2_diag/launch_regime/phases.txt",
+    "./dev/gnc2_diag/launch_regime/young.txt",
+    "./dev/gnc2_diag/launch_regime/regime.txt",
+    "./dev/gnc2_diag/launch_regime/below.txt",
+    "./dev/gnc2_diag/launch_regime/tail.txt",
+    "./dev/gnc2_diag/launch_regime/coast_pred.txt",
+    "./dev/gnc2_diag/launch_regime/compare_strict.txt",
+    "./dev/gnc2_diag/launch_regime/compare_free.txt",
+    "./dev/gnc2_diag/launch_regime/sim/"
+   ],
+   "caveats": "- **Verdict split.** The overall verdict is moderate only because of the end of the burn: after-burnout pops are 14 of the 39 pops free is missing, and we also stop popping about 1 s earlier before burnout. As a flight-quality deficit, the launch part is minor, since 95% of the strict first-pop gap is their foreknowledge of the release schedule on fixed seeds. The energy/gravity/ground-rule parts are not supported.\n- **Seconds per hop (0.1 s).** This is the direct share of the 1.2 s median hop gap: climb cost 0.09 s plus a slightly higher throttle-down. The window effect (5.9 s/run, about 2.5 pops/run) lies outside the time between pops. It amounts to about 0.45 s/hop only if spread over their 12 hops per run.\n- **Few distinct seeds.** The 11 replays are only 5 distinct seeds (0 x4, 1957083 x4, 14, 1362, 205). Free flights are identical within a seed, and the strict Apex12/13 runs are identical.\n- **Each sim variant ran once per replay.** Strict runs are chaotic. The 0.5 deg jitter floor (SD 0.7 on the 11-run total) understates the spread after large perturbations: SpaceY went 5 -> 7 under jitter and 5 -> 9 with their attitude. Excluding SpaceY, their attitude gives +6 and 68 deg gives +2.\n- **Crude foreknowledge test.** The 'know' variant is crude: a stationary phantom target that the rocket overshoots. It also puts a zero-wind sample into the bwind-4 wind history for 1-4 s.\n- **Specific force is approximate.** For their runs it assumes still-air drag and a mass model that ignores grain regression (wind about 4 m/s, drag about 0.1-0.2 m/s^2).\n- **Some after-burnout pops may not be reproducible.** Their pops at +5 to +6.5 s after burnout (3 of 15) come where point-mass prediction is off by about 13 m, so they are likely seed-memorised in the deterministic sim. The realistic target is the 10 pops within 2.2 s of burnout.\n- **Evaluation needs a retrain.** Effects of the GNC changes were not simulated here. As the log shows, a fixed-policy sweep is biased against any GNC change, so judge them after a retrain or on a fixed-target benchmark.\n- **Scope.** No existing file was modified; all outputs are under dev/gnc2_diag/launch_regime/; at most 4 simulation processes ran at once."
+  },
+  "verdict": {
+   "checks": [
+    {
+     "claim": "C1: The launch and end phases shorten the pop window by 5.9 s/run, worth 2.5 pops/run or 44% of the 5.8 pops/run strict deficit, and they explain almost none of the hop gap.",
+     "status": "CONFIRMED",
+     "corrected_value": "The numbers reproduce exactly: their first pop 4.68 s, last 32.55 s, period 2.31 s; strict 6.22 / 28.24 / 3.51 s; free 5.42 / 28.98 / 2.76 s. The share depends on which period converts seconds to pops: 44% with their period, 29% (1.67 pops) with ours. The 5.85 s gap splits into 1.54 s at the first pop, 3.33 s from their pops after burnout, and 0.98 s before burnout. About 0.6 s of that last 0.98 s is simply what our slower period predicts.",
+     "note": "Recomputed with my own loader (v_window.py). The window gap is not independent of hop speed. Our strict gap from last pop to burnout (1.76 s) equals half our period (1.76 s) and is below the renewal expectation of 2.04 s. So that part double counts the hop gap. 'Almost none of the hop gap' holds: with their attitude at ±2 deg heading, the strict period stays at 3.44-3.51 s (base 3.51 s). The 3.25 s period in the other agent's 'att' run was chaos."
+    },
+    {
+     "claim": "C2: Pops by phase (0-5 / 5-10 / 10-30 / >30 s): strict 2/14/64/0, free 4/25/75/1, theirs 9/15/105/15. Free is ahead of them at t+10 s.",
+     "status": "CONFIRMED",
+     "corrected_value": "Same: by t+10 s free has 29 pops, they have 24, strict has 16.",
+     "note": "Pop times were rebuilt from status transitions and match the stored pops in all 33 files. Boundary caveat: in the 4 identical free flights on seed 1957083 a balloon pops at exactly s = 30.00 (burnout). It counts as before burnout."
+    },
+    {
+     "claim": "C3: The strict first-pop gap is 95% seed foreknowledge: 5 pre-positioned runs carry 16.1 of the 16.9 s summed gap.",
+     "status": "REFUTED",
+     "corrected_value": "The facts reproduce: in 9 of 11 runs the first balloon was still on the ground at launch; 5 runs were 2.0-5.1 m from it at release; pops came 0.17-0.85 s later at 1.3-6.4 m altitude; 16.06 of 16.93 s. The 95% share does not hold. A seed-agnostic 68 deg launch toward the low balloons recovers 5.2 s of the summed gap: Apex 7.37 -> 4.57 s, stable at ±2 deg. Their exact attitude recovers 7.9 s. At most 54-70% (9.1-11.8 s, about 0.8-1.1 s/run) can be foreknowledge.",
+     "note": "The 95% is also a net figure. Four runs where we were faster (-1.87 s) cancel out, so the share of the positive gaps is 85%. Apex12 and Apex13 are one identical flight counted twice (8.4 s). Foreknowledge is still plausible: the approach to the balloon's ground spot in the last second before release was 19.9 -> 5.1 m for Yaka and 9.8 -> 2.7 m for Taoyuan, and the memory notes the 18-pop runs were seed-optimized. Sources: v_first.py, v_skim.py, re-count of the sim files."
+    },
+    {
+     "claim": "C4: Given foreknowledge ('know' variant), our GNC matches their first-pop times (2.65 / 2.65 / 3.71 / 2.14 s); Apex got worse.",
+     "status": "UNCERTAIN",
+     "corrected_value": "The listed times reproduce. Of the 5 pre-positioned runs, 3 match or beat theirs. SB16 and Taoyuan are the same flight, so that is really 2 cases. Apex (2 copies) got worse at 8.37 s. Not reported: SpaceY got worse (3.55 -> 7.18 s), near_miss got worse (4.83 -> 5.98 s), and 'know' totals 83 pops versus 90 for 'att'.",
+     "note": "The evidence is weak and partly cherry-picked. It does not show a general match."
+    },
+    {
+     "claim": "C5: They launch tilted toward the first balloon (median 68.4 deg; heading 0-19 deg off in 10/10 tilted runs). We launch at 90.0 deg (strict) and a median 87.9 deg (free).",
+     "status": "CONFIRMED",
+     "corrected_value": "Tilted launches: 61.5-77.7 deg, median 68.4 deg, one run vertical; heading 0.3-18.7 deg off the first balloon's bearing. Strict 90.0 deg in 11/11; free median 87.9 deg.",
+     "note": "Quaternion convention checked independently. During the burn the angle between body z (scalar-first, body->world) and the measured specific force has a median of 1.5-7.4 deg per run. With the transposed convention it is 6-69 deg. Their rocket moves almost horizontally in the first second (5-33 deg climb angle): a skim."
+    },
+    {
+     "claim": "C6: Their exact launch attitude adds 10 strict pops (6 up, 0 down); the general low68 rule adds 5.",
+     "status": "REFUTED",
+     "corrected_value": "Turning their attitude's heading by +2 / -2 deg gives 86 / 83 pops, not 90. The robust gain is +3 to +6 (mean +6.3 over 3 headings); only the +3 pops by t+10 s is stable. Most of the +10 is SpaceY (+4 at the exact heading, 0 at ±2 deg) plus Mochi. low68 gives 85 / 85 / 83 at 0 / +2 / -2 deg, i.e. +3 to +5, so that part holds.",
+     "note": "My own strict re-runs (v_sim.py). The instrumented base run reproduces 80 pops exactly. First-pop mean 5.50-5.51 s for their attitude and 5.74-5.76 s for low68 at every heading."
+    },
+    {
+     "claim": "C7: With our own policy choosing targets, launch attitude does nothing (free 105 / 103 / 104; unique seeds 45 / 46 / 47).",
+     "status": "CONFIRMED",
+     "corrected_value": "Same numbers. Counting unique seeds, the tilt is +1 / +2 on 5 seeds, which is inconclusive.",
+     "note": "Consistent with DECISION_LOG section 91 (random vs policy-chosen attitude differ by 0.07 pops over 43k episodes)."
+    },
+    {
+     "claim": "C8: The altitude/energy regime does not separate us from them; free flies as fast as they do and higher.",
+     "status": "UNCERTAIN",
+     "corrected_value": "Means over runs, theirs / strict / free: speed 17.4 / 14.0 / 17.5 m/s; altitude 114.9 / 103.6 / 124.4 m; energy at burnout 2698 / 2351 / 3492 J/kg; f.v 92.6 / 79.6 / 118.8 W/kg. The finding's 124 / 100 / 134 m and 3031 / 2514 / 3625 J/kg are medians of per-run means, and it does not say so.",
+     "note": "True for free. Not true for strict, which is the flight-quality benchmark: strict is 20% slower and has 13% less energy. That is probably a consequence of slow hops rather than a cause, but 'does not separate' overstates it."
+    },
+    {
+     "claim": "C9: Gravity cost is 0.007 s per metre climbed, so the 13 m extra climb costs 0.09 s/hop; below-and-losing time is 8% vs 7%.",
+     "status": "UNCERTAIN",
+     "corrected_value": "The coefficient reproduces (0.0074 s/m), but its 90% bootstrap interval over runs is [-0.010, +0.021] s/m. That puts the 13 m effect anywhere from -0.13 to +0.27 s. Our strict coefficient is negative (-0.017 s/m). Below-and-losing reproduces: 6.7% / 8.1% / 5.0%.",
+     "note": "The regression has reverse causality: balloons rise 7-9 m/s during a hop, so longer hops climb more. Climb and straight distance are also collinear regressors. 0.09 s is not a measured cost; 'small' is plausible but not shown."
+    },
+    {
+     "claim": "C10: Thrust usage is the same (|f| / full-thrust accel 0.95 vs 0.96; unused 0.78 vs 0.55 m/s^2; throttle 0.91).",
+     "status": "CONFIRMED",
+     "corrected_value": "0.942 strict vs 0.958 theirs; unused thrust 0.76 vs 0.54 m/s^2; commanded throttle 0.908.",
+     "note": "The 0.22 m/s^2 difference is worth about 0.03 s on a 3.4 s hop."
+    },
+    {
+     "claim": "C11: The min_alt rule never fires; they spend 10% of the burn below 5 m, almost all in the first 6 s.",
+     "status": "CONFIRMED",
+     "corrected_value": "min_alt condition (altitude < 3 m and vz < 0) holds in 0.000 of strict and free burn steps. They spend 11.6% of the burn below 5 m, 0.17% after t+6 s.",
+     "note": "Not mentioned in the finding: we also spend 7.2% of the burn below 5 m, because a vertical climb at thrust/weight 1.2 takes 2.2 s to reach 5 m."
+    },
+    {
+     "claim": "C12: The 'never thrust downward' clamp binds 5-6% of strict steps, mostly at the end of the burn; relaxing it gives 82 vs 80.",
+     "status": "CONFIRMED",
+     "corrected_value": "An instrumented _saturate shows the clamp binds 6.28% of strict guided steps. The logged F_z == 1 test misses 17% of binding steps, the saturated ones where F_z > 1. 37% of binding steps fall in the last 2 s. The nodown gain (+1 in SB16, +1 in Taoyuan) is a single +1 because those are the same flight.",
+     "note": "The conclusion stands."
+    },
+    {
+     "claim": "C13: Pops after burnout are a real gap: 15/144 of theirs, 10 within 2.2 s; ours 0 (strict) and 1 (free).",
+     "status": "CONFIRMED",
+     "corrected_value": "15 pops (1.36/run); 10 within 2.2 s (0.9/run); 3 at +5.0 to +6.5 s. Burnout is at s = 30.0 in every run.",
+     "note": "If pops at exactly s = 30.00 count as after burnout, free has 5, but 4 of those are copies of one flight."
+    },
+    {
+     "claim": "C14: We stop popping earlier before burnout (1.76 / 1.23 s vs their 0.77 s), and our last targets are near-missed by 2.2-4.7 m just after burnout.",
+     "status": "CONFIRMED",
+     "corrected_value": "Strict near misses in 4/11 runs: 4.30, 4.66, 2.95, 2.95 m at +0.43-1.53 s, from 3 distinct flights. Free near misses in 5/11 runs: 2.25 m (4 copies of one flight) and 2.49 m. The earlier stop, however, is not a separate end-of-burn defect: the strict last-pop-to-burnout time of 1.76 s equals half our period.",
+     "note": "Using the dead time to justify fix 1 double counts the hop-period deficit. Their 0.77 s is below their own renewal expectation of 1.46 s. Only that small residual (about 0.4 s) is an end-game advantage."
+    },
+    {
+     "claim": "C15: coast=1 terminal guidance is ill-conditioned: the command blows up and swings, the clamp saturates, and the path leaves the point-mass model by metres.",
+     "status": "UNCERTAIN",
+     "corrected_value": "The quoted f values are the realized dv/dt - g, not the logged commanded F, which is (2.0, -6.6, 1.0) and then (-0.9, 1.4, 13.9). In all 22 of our flights the coast reach set collapses 0.2-1.5 s before burnout, RL2Agent._select_target falls back to t_go = 14.9 s, and the command flips to within 1-7 deg of vertical. In 9 runs the body is 70-90 deg away from the command at burnout. With a still-air ballistic model, their prediction error at +1 / +2 / +3 s is 0.9 / 3.0 / 6.2 m (matches). Ours is 0.3 / 0.9 / 2.0 m (strict) and 1.2 / 3.2 / 5.7 m (free); the claimed ranges for ours do not reproduce.",
+     "note": "I tested a hold variant that keeps counting down the last finite t_go (v_hold.py). The command still swings about 100 deg within 0.2 s, which supports ill-conditioning. But it changed zero pops (strict 80 -> 80, free 45 -> 45 on unique seeds; CoolBa miss 2.25 -> 2.27 m). The near misses are decided more than 0.3 s before burnout, and our ballistic error at the near-miss times is already below the balloon radius."
+    }
+   ],
+   "seconds_per_hop_assessment": "The 0.1 s/hop figure is about right as 'close to zero', but it is not a measured number. Its main part, the 0.09 s climb cost, comes from a regression coefficient that is not significant. The 90% interval is -0.13 to +0.27 s, and our own strict fit has the opposite sign. Throttle-down adds only about 0.03 s. Launch attitude does not change the strict hop period robustly: at ±2 deg heading it is 3.44-3.51 s against base 3.51 s. The 3.25 s in the other agent's single 'att' run was chaos. The alternative '0.45 s/hop if spread' double counts. About 0.6 s of the 0.98 s pre-burnout part of the window gap is simply what our slower period predicts (our last-pop-to-burnout time equals half the period). The seed-agnostic first-pop share is about 0.5 s/run and the post-burnout share about 1.36 pops/run; both are per run, not per hop. Best estimate: 0 to 0.2 s of the 1.2 s median hop gap.",
+   "overall": "partly",
+   "fix_assessment": "Fix 1 (end-of-burn mode) follows from the evidence in direction: they get 1.36 post-burnout pops/run, 0.9 of them within 2.2 s; we have repeatable 2.2-4.7 m near misses; the coast command is ill-conditioned. The expected +0.3 to +0.8 pops/run is inflated, though. The 'cut dead time toward 0.8 s' part double counts the hop period. Converting half of the near misses gives only about +0.2 pops/run (strict 0.18, free 0.23), and those come from 2-3 distinct flights. The upper bound is about 0.9/run. A minimal patch of the t_go = 14.9 s fallback converted nothing in 16 runs, so the mode must act at least 1-2 s before burnout. The coast=2 takeover in section 75 lost 0.33 pops/run, so the medium risk is fair. Evidence-based estimate: +0.1 to +0.3 pops/run, and it should be proven on a fixed-target benchmark first.\n\nFix 2 (fit the post-burnout aero term) is weakly motivated for our own flights. Our strict still-air ballistic error is already 0.3 m (median) at +1 s, and the near misses happen at +0.4 to +1.5 s. It matters more for free flights (1.2 m at +1 s). Low priority.\n\nFix 3 (leave launch attitude to the policy) is supported for the policy: free 103-105, and section 91. The rationale should say that in strict runs a tilted launch gives a robust +3 to +6 pops, not +10.\n\nFix 4 (keep min_alt and the global clamp) is supported: min_alt fires 0% of the time, and relaxing the clamp gives +1 in a single flight.\n\nFix 5 (benchmark hygiene) is sensible in direction, but the '1.5 s/run from foreknowledge' is overstated. A seed-agnostic tilted launch recovers about 0.5 s/run of the first-pop gap, so foreknowledge is at most about 0.8-1.1 s/run. The benchmark would be better to exclude only the pre-positioned pops (dist < 6 m at release) than to discount the whole launch gap.\n\nAlso a benchmark caveat: the strict teacher launches on a 0.5 s decision grid, up to 0.19 s off their launch time (Yaka +0.19 s, Taoyuan -0.18 s).\n\nScripts and outputs are in ./dev/gnc2_diag/verify_regime/: vc.py, v_window.py, v_first.py, v_skim.py, v_att.py, v_regime.py, v_hops.py, v_tail.py, v_sim.py, v_hold.py, v_hold_check.py, with matching .txt files and sim/. No existing file was modified, and at most 4 sim processes ran at once."
+  }
+ }
+]

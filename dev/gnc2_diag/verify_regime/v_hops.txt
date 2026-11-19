@@ -1,0 +1,3 @@
+their        unique flights 11 hops 118 median dt 2.22 median climb 16.3 m median climb rate 10.8 m/s | fit dt = 1.00 + 0.0074 climb + 0.0297 desc + 0.0257 dist; climb coef 90% CI [-0.0102, 0.0211] | climb-only fit slope 0.0243
+ours_strict  unique flights 9 hops 54 median dt 3.49 median climb 29.6 m median climb rate 8.7 m/s | fit dt = 1.87 + -0.0165 climb + 0.0425 desc + 0.0455 dist; climb coef 90% CI [-0.0583, -0.0019] | climb-only fit slope 0.0293
+ours_free    unique flights 5 hops 39 median dt 2.90 median climb 27.6 m median climb rate 10.1 m/s | fit dt = 1.54 + 0.0119 climb + 0.0262 desc + 0.0191 dist; climb coef 90% CI [-0.0135, 0.0442] | climb-only fit slope 0.0241

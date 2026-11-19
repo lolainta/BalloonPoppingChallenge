@@ -1,0 +1,6 @@
+[their] first hop n=11 duration med 3.99s  turn at launch med 10.1 deg  t20 med 0.01s  t10 med 0.20s  peak |w| med 0.26  lost thrust (1-cos) med 3.51 m/s
+[ours_strict] first hop n=11 duration med 6.67s  turn at launch med 10.0 deg  t20 med 0.01s  t10 med 0.01s  peak |w| med 0.00  lost thrust (1-cos) med 5.33 m/s
+[ours_free] first hop n=11 duration med 5.67s  turn at launch med 8.7 deg  t20 med 0.01s  t10 med 0.01s  peak |w| med 0.00  lost thrust (1-cos) med 0.53 m/s
+[their] closing speed toward the next balloon at the pop: median 14.4 m/s (p25 9.5, p75 19.8); negative in 0.05
+[ours_strict] closing speed toward the next balloon at the pop: median 9.7 m/s (p25 2.2, p75 14.6); negative in 0.09
+[ours_free] closing speed toward the next balloon at the pop: median 9.5 m/s (p25 3.8, p75 15.1); negative in 0.11

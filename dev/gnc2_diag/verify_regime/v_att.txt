@@ -1,0 +1,39 @@
+their        10_CoolBa      angle(zb,f) p50   5.0 p95  15.7 (transposed conv p50  21.3) | launch incl  77.7 head 107.4 | 1 s displacement incl  32.8 head 112.0 | bearing to 1st balloon 107.7 head-bearing   -0.3
+their        10_SpaceY      angle(zb,f) p50   2.0 p95   9.5 (transposed conv p50  44.2) | launch incl  62.0 head  13.9 | 1 s displacement incl  19.3 head  10.3 | bearing to 1st balloon 355.2 head-bearing   18.7
+their        11_Mochi       angle(zb,f) p50   5.9 p95  23.5 (transposed conv p50  25.7) | launch incl  65.0 head 150.0 | 1 s displacement incl  12.8 head 148.2 | bearing to 1st balloon 146.0 head-bearing    4.0
+their        11_near_miss   angle(zb,f) p50   2.5 p95   6.8 (transposed conv p50  43.0) | launch incl  90.0 head 277.8 | 1 s displacement incl  89.0 head  97.8 | bearing to 1st balloon 117.1 head-bearing  160.8
+their        12_Apex        angle(zb,f) p50   3.8 p95   9.2 (transposed conv p50  17.8) | launch incl  68.4 head 101.2 | 1 s displacement incl  13.6 head 101.2 | bearing to 1st balloon 100.9 head-bearing    0.3
+their        13_Apex        angle(zb,f) p50   4.2 p95   9.5 (transposed conv p50  22.5) | launch incl  68.4 head 101.2 | 1 s displacement incl  13.6 head 101.2 | bearing to 1st balloon 100.9 head-bearing    0.3
+their        13_Yaka        angle(zb,f) p50   3.1 p95  15.5 (transposed conv p50  69.1) | launch incl  70.2 head  37.6 | 1 s displacement incl  18.7 head  37.6 | bearing to 1st balloon  36.8 head-bearing    0.8
+their        14_SpaceBerry  angle(zb,f) p50   2.1 p95   7.0 (transposed conv p50  17.4) | launch incl  77.4 head 199.8 | 1 s displacement incl  54.6 head 191.0 | bearing to 1st balloon 184.4 head-bearing   15.3
+their        16_SpaceBerry  angle(zb,f) p50   4.1 p95  14.8 (transposed conv p50   6.0) | launch incl  61.8 head 120.8 | 1 s displacement incl  12.8 head 123.9 | bearing to 1st balloon 110.9 head-bearing   10.0
+their        16_TeamDJ      angle(zb,f) p50   7.4 p95  20.8 (transposed conv p50  21.4) | launch incl  61.5 head 163.4 | 1 s displacement incl   8.8 head 164.8 | bearing to 1st balloon 150.4 head-bearing   13.0
+their        18_Taoyuan     angle(zb,f) p50   4.5 p95  10.8 (transposed conv p50  12.1) | launch incl  62.2 head 118.6 | 1 s displacement incl   5.5 head 120.7 | bearing to 1st balloon 112.8 head-bearing    5.7
+== their: launch inclination median 68.4 min 61.5 max 90.0; tilted (<85) 10/11
+
+ours_strict  10_CoolBa      angle(zb,f) p50   2.9 p95   9.6 (transposed conv p50  50.9) | launch incl  90.0 head 277.8 | 1 s displacement incl  63.1 head 110.1 | bearing to 1st balloon 108.1 head-bearing  169.8
+ours_strict  10_SpaceY      angle(zb,f) p50   1.5 p95   7.8 (transposed conv p50  34.6) | launch incl  90.0 head 277.8 | 1 s displacement incl  77.1 head 341.3 | bearing to 1st balloon 355.6 head-bearing  -77.8
+ours_strict  11_Mochi       angle(zb,f) p50   3.6 p95  10.8 (transposed conv p50  56.9) | launch incl  90.0 head 277.8 | 1 s displacement incl  63.3 head 144.4 | bearing to 1st balloon 147.0 head-bearing  130.8
+ours_strict  11_near_miss   angle(zb,f) p50   2.0 p95   7.5 (transposed conv p50  46.9) | launch incl  90.0 head 277.8 | 1 s displacement incl  81.4 head  57.0 | bearing to 1st balloon 120.7 head-bearing  157.1
+ours_strict  12_Apex        angle(zb,f) p50   1.6 p95   7.6 (transposed conv p50  52.2) | launch incl  90.0 head 277.8 | 1 s displacement incl  64.9 head  77.0 | bearing to 1st balloon  99.0 head-bearing  178.9
+ours_strict  13_Apex        angle(zb,f) p50   1.6 p95   7.6 (transposed conv p50  52.2) | launch incl  90.0 head 277.8 | 1 s displacement incl  64.9 head  77.0 | bearing to 1st balloon  99.0 head-bearing  178.9
+ours_strict  13_Yaka        angle(zb,f) p50   2.2 p95   9.9 (transposed conv p50  58.6) | launch incl  90.0 head 277.8 | 1 s displacement incl  77.6 head  20.4 | bearing to 1st balloon  51.6 head-bearing -133.8
+ours_strict  14_SpaceBerry  angle(zb,f) p50   1.8 p95   5.1 (transposed conv p50  45.0) | launch incl  90.0 head 277.8 | 1 s displacement incl  69.3 head 231.4 | bearing to 1st balloon 111.9 head-bearing  166.0
+ours_strict  16_SpaceBerry  angle(zb,f) p50   1.6 p95   5.9 (transposed conv p50  50.7) | launch incl  90.0 head 277.8 | 1 s displacement incl  64.9 head  77.0 | bearing to 1st balloon 106.8 head-bearing  171.1
+ours_strict  16_TeamDJ      angle(zb,f) p50   3.6 p95   9.6 (transposed conv p50  48.2) | launch incl  90.0 head 277.8 | 1 s displacement incl  61.5 head 145.1 | bearing to 1st balloon 150.6 head-bearing  127.3
+ours_strict  18_Taoyuan     angle(zb,f) p50   1.6 p95   5.9 (transposed conv p50  50.7) | launch incl  90.0 head 277.8 | 1 s displacement incl  64.9 head  77.0 | bearing to 1st balloon 106.8 head-bearing  171.1
+== ours_strict: launch inclination median 90.0 min 90.0 max 90.0; tilted (<85) 0/11
+
+ours_free    10_CoolBa      angle(zb,f) p50   3.6 p95  12.4 (transposed conv p50  32.2) | launch incl  88.2 head 244.7 | 1 s displacement incl  78.3 head 294.5 | bearing to 1st balloon 320.5 head-bearing  -75.9
+ours_free    10_SpaceY      angle(zb,f) p50   2.8 p95  15.2 (transposed conv p50  12.8) | launch incl  86.8 head 305.1 | 1 s displacement incl  77.7 head 354.1 | bearing to 1st balloon  50.4 head-bearing -105.2
+ours_free    11_Mochi       angle(zb,f) p50   3.6 p95  12.4 (transposed conv p50  32.2) | launch incl  88.2 head 244.7 | 1 s displacement incl  78.3 head 294.5 | bearing to 1st balloon 320.5 head-bearing  -75.9
+ours_free    11_near_miss   angle(zb,f) p50   2.9 p95   6.1 (transposed conv p50  56.6) | launch incl  87.9 head  49.0 | 1 s displacement incl  65.5 head  95.5 | bearing to 1st balloon  99.1 head-bearing  -50.1
+ours_free    12_Apex        angle(zb,f) p50   3.4 p95   7.6 (transposed conv p50  11.9) | launch incl  87.5 head 121.8 | 1 s displacement incl  60.1 head  97.8 | bearing to 1st balloon 107.0 head-bearing   14.8
+ours_free    13_Apex        angle(zb,f) p50   3.4 p95   7.6 (transposed conv p50  11.9) | launch incl  87.5 head 121.8 | 1 s displacement incl  60.1 head  97.8 | bearing to 1st balloon 107.0 head-bearing   14.8
+ours_free    13_Yaka        angle(zb,f) p50   3.6 p95  12.4 (transposed conv p50  32.2) | launch incl  88.2 head 244.7 | 1 s displacement incl  78.3 head 294.5 | bearing to 1st balloon 320.5 head-bearing  -75.9
+ours_free    14_SpaceBerry  angle(zb,f) p50   4.8 p95  18.3 (transposed conv p50  33.4) | launch incl  87.9 head 247.7 | 1 s displacement incl  58.1 head 193.7 | bearing to 1st balloon 179.8 head-bearing   68.0
+ours_free    16_SpaceBerry  angle(zb,f) p50   3.4 p95   7.6 (transposed conv p50  11.9) | launch incl  87.5 head 121.8 | 1 s displacement incl  60.1 head  97.8 | bearing to 1st balloon 107.0 head-bearing   14.8
+ours_free    16_TeamDJ      angle(zb,f) p50   3.6 p95  12.4 (transposed conv p50  32.2) | launch incl  88.2 head 244.7 | 1 s displacement incl  78.3 head 294.5 | bearing to 1st balloon 320.5 head-bearing  -75.9
+ours_free    18_Taoyuan     angle(zb,f) p50   3.4 p95   7.6 (transposed conv p50  11.9) | launch incl  87.5 head 121.8 | 1 s displacement incl  60.1 head  97.8 | bearing to 1st balloon 107.0 head-bearing   14.8
+== ours_free: launch inclination median 87.9 min 86.8 max 88.2; tilted (<85) 0/11
+

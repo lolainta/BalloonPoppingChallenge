@@ -1,0 +1,6 @@
+variant    runs  pops burnpops hop_med hop_mean first_med U_mean thr_mean  T_lb  magL  dirL  vrel dPops_vs_base
+freebase     11   105      104    2.58     2.76      5.66  0.929    0.927  2.46  0.13  0.16  15.4  
+freelead10   11   103       95    2.53     2.93      5.65  0.919    0.918  2.35  0.17  0.41  16.5  
+ours_free    n= 90 T_act med 2.79 | T_lb med 2.32 mean 2.49 | T_lb(v0=vb) med 3.35 mean 3.15 | velocity bonus mean +0.66 | range med 39.3 dz med +9.7 speed0 med 16.8 closing0 med +9.5 cos(vrel, LOS) med +0.82
+freebase     n= 90 T_act med 2.79 | T_lb med 2.32 mean 2.49 | T_lb(v0=vb) med 3.35 mean 3.15 | velocity bonus mean +0.66 | range med 39.3 dz med +9.7 speed0 med 16.8 closing0 med +9.5 cos(vrel, LOS) med +0.82
+freelead10   n= 92 T_act med 2.53 | T_lb med 2.25 mean 2.36 | T_lb(v0=vb) med 2.83 mean 3.17 | velocity bonus mean +0.81 | range med 39.7 dz med +9.7 speed0 med 16.7 closing0 med +10.0 cos(vrel, LOS) med +0.83

@@ -1,0 +1,4 @@
+leg_dt=0.1 launch_time=10
+leg_dt=0.1 launch_time=15
+leg_dt=0.1 launch_time=20
+leg_dt=0.1 launch_time=25

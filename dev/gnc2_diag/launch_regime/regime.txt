@@ -1,0 +1,9 @@
+their        |f| 12.28  |v| 17.96  cos(f,v)  0.40  f.v   95.1  fz*vz   84.4  |f_h|  5.88  unused thrust  0.55 m/s^2
+             hops(burn) 118  median dt 2.22  median climb  16.3 m  frac climbing 0.81  median straight dist  37.9 m  mean straight-line speed 20.34 m/s
+             fit dt = 1.00 + 0.007*climb + 0.030*descent + 0.026*dist   (s, m)
+ours_strict  |f| 12.05  |v| 14.44  cos(f,v)  0.47  f.v   81.8  fz*vz   77.5  |f_h|  5.71  unused thrust  0.78 m/s^2
+             hops(burn) 69  median dt 3.41  median climb  29.4 m  frac climbing 0.94  median straight dist  43.7 m  mean straight-line speed 13.90 m/s
+             fit dt = 1.77 + -0.019*climb + 0.047*descent + 0.047*dist   (s, m)
+ours_free    |f| 12.37  |v| 18.04  cos(f,v)  0.57  f.v  122.3  fz*vz  110.1  |f_h|  5.97  unused thrust  0.47 m/s^2
+             hops(burn) 93  median dt 2.59  median climb  27.6 m  frac climbing 0.96  median straight dist  46.4 m  mean straight-line speed 18.27 m/s
+             fit dt = 1.18 + 0.002*climb + 0.022*descent + 0.031*dist   (s, m)

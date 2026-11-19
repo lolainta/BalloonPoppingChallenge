@@ -1,0 +1,8 @@
+# B: each option on (one at a time), 5-output checkpoint, seed 10000 (off = A5_post seed 10000)
+B_ho_keep ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 ho_keep=1.0
+B_redecide1 ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 redecide=1
+B_redecide2 ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 redecide=2
+B_ho_T ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 ho_T=1.0
+B_eob_pick ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 eob_pick=1
+B_eob_align ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 eob_align=20
+B_ens ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 ens=./runs/s4res2/rl3_policy_116438400.npz,./runs/s4res2/rl3_policy_116179200.npz

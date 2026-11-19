@@ -1,0 +1,7 @@
+# B2: eob_pick / eob_align on seeds 10000, 10001 (with diagnostics) + forcing settings (eob_pick_r=6, eob_align=90)
+B_eob_pick ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 eob_pick=1
+B_eob_align ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 eob_align=20
+B_eob_pick ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10001 eob_pick=1
+B_eob_align ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10001 eob_align=20
+B_eob_pick_r6 ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 eob_pick=1 eob_pick_r=6
+B_eob_align90 ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000 eob_align=90

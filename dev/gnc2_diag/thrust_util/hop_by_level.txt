@@ -1,0 +1,6 @@
+ours_strict  no 1.3    n= 32 magL mean 0.14 med 0.13  T_act mean 3.29  U_hop 0.927
+ours_strict  some 1.3  n= 37 magL mean 0.21 med 0.14  T_act mean 3.70  U_hop 0.867
+ours_strict  >50% 1.3  n= 15 magL mean 0.23 med 0.23  T_act mean 3.09  U_hop 0.806
+ours_free    no 1.3    n= 64 magL mean 0.12 med 0.13  T_act mean 2.83  U_hop 0.932
+ours_free    some 1.3  n= 30 magL mean 0.16 med 0.14  T_act mean 2.61  U_hop 0.894
+ours_free    >50% 1.3  n=  6 magL mean 0.24 med 0.18  T_act mean 2.59  U_hop 0.795

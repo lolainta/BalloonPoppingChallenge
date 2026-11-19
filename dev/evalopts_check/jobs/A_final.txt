@@ -1,0 +1,5 @@
+# A re-check with the final code (after the eob diagnostics / sweep fix): post only, compare with the pre hashes of out_A1 / out_AB
+A5_final ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10000
+A5_final ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res2/rl3_policy_116668800.npz ./runs/s4res2/rl2_sl_116668800.npz 10001
+A3_final ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res/rl3_policy_99561600.npz ./runs/s4res/rl2_sl_99561600.npz 10000
+A0_final ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4ent/rl3_policy_88761600.npz ./runs/s4ent/rl2_sl_88761600.npz 10000

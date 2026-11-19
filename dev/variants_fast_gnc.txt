@@ -1,0 +1,5 @@
+stretch=1.0
+stretch=1.0 margin=0
+stretch=0.8 margin=0
+stretch=1.0 margin=0 nav_N=3
+stretch=0.8 margin=0 nav_N=3 t_go_min=0.1

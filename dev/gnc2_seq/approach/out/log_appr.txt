@@ -1,0 +1,4 @@
+[appr] seed 46001: best 10 greedy 9 finished [9, 10, 10, 10, 10] legs 352  283.0s
+[appr] seed 46002: best 10 greedy 10 finished [10, 10, 10, 10] legs 304  283.8s
+[appr] seed 46003: best 8 greedy 7 finished [7, 8, 8, 8, 8, 8] legs 272  285.6s
+remaining 44 seeds

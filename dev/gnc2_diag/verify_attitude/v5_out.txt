@@ -1,0 +1,41 @@
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:131: RuntimeWarning: All-NaN slice encountered
+  Tr = np.nanmin(simulate(d["q"][i], np.zeros(3), dirs, a_of_t, c_of_t, nst))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:132: RuntimeWarning: All-NaN slice encountered
+  Tw = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:133: RuntimeWarning: All-NaN slice encountered
+  Tf = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst, kr=3 * KROT, k_att=5.0, max_rate=5.0, k_rate=4.0))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:130: RuntimeWarning: All-NaN slice encountered
+  Tg = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst, instant=True))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:131: RuntimeWarning: All-NaN slice encountered
+  Tr = np.nanmin(simulate(d["q"][i], np.zeros(3), dirs, a_of_t, c_of_t, nst))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:132: RuntimeWarning: All-NaN slice encountered
+  Tw = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:133: RuntimeWarning: All-NaN slice encountered
+  Tf = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst, kr=3 * KROT, k_att=5.0, max_rate=5.0, k_rate=4.0))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:133: RuntimeWarning: All-NaN slice encountered
+  Tf = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst, kr=3 * KROT, k_att=5.0, max_rate=5.0, k_rate=4.0))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:131: RuntimeWarning: All-NaN slice encountered
+  Tr = np.nanmin(simulate(d["q"][i], np.zeros(3), dirs, a_of_t, c_of_t, nst))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:132: RuntimeWarning: All-NaN slice encountered
+  Tw = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:130: RuntimeWarning: All-NaN slice encountered
+  Tg = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst, instant=True))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:130: RuntimeWarning: All-NaN slice encountered
+  Tg = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst, instant=True))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:131: RuntimeWarning: All-NaN slice encountered
+  Tr = np.nanmin(simulate(d["q"][i], np.zeros(3), dirs, a_of_t, c_of_t, nst))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:132: RuntimeWarning: All-NaN slice encountered
+  Tw = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:133: RuntimeWarning: All-NaN slice encountered
+  Tf = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst, kr=3 * KROT, k_att=5.0, max_rate=5.0, k_rate=4.0))
+./dev/gnc2_diag/verify_attitude/v5_turnmodel.py:130: RuntimeWarning: All-NaN slice encountered
+  Tg = np.nanmin(simulate(d["q"][i], d["w"][i], dirs, a_of_t, c_of_t, nst, instant=True))
+[their] n=118 hop mean 2.29 | T_inst mean 1.816 med 1.71 | grid-inst bias 0.014 | th to T_inst dir med 19.4
+    pointing cost (vs grid-inst): rest mean 0.119 med 0.020 | with actual w0 mean 0.119 med 0.020 | 3x-alpha fast w0 mean 0.052 | w0 - fast3 mean 0.051
+    residual actual - T_w0 mean 0.288
+[ours_strict] n=69 hop mean 3.51 | T_inst mean 2.473 med 2.46 | grid-inst bias 0.034 | th to T_inst dir med 40.2
+    pointing cost (vs grid-inst): rest mean 0.342 med 0.290 | with actual w0 mean 0.328 med 0.260 | 3x-alpha fast w0 mean 0.193 | w0 - fast3 mean 0.141
+    residual actual - T_w0 mean 0.529
+[ours_free] n=93 hop mean 2.76 | T_inst mean 2.450 med 2.30 | grid-inst bias 0.025 | th to T_inst dir med 29.6
+    pointing cost (vs grid-inst): rest mean 0.123 med 0.080 | with actual w0 mean 0.055 med 0.030 | 3x-alpha fast w0 mean 0.041 | w0 - fast3 mean 0.014
+    residual actual - T_w0 mean 0.237

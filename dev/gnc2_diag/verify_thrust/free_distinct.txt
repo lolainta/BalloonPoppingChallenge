@@ -1,0 +1,5 @@
+10_CoolBa seed 0 freebase pops/inburn (9, 9) freelead10 (8, 7)
+10_SpaceY seed 14 freebase pops/inburn (8, 8) freelead10 (8, 8)
+11_near_miss seed 1362 freebase pops/inburn (9, 8) freelead10 (10, 10)
+12_Apex seed 1957083 freebase pops/inburn (11, 11) freelead10 (11, 10)
+14_SpaceBerry seed 205 freebase pops/inburn (8, 8) freelead10 (9, 9)

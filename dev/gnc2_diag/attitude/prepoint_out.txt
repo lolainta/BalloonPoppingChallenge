@@ -1,0 +1,12 @@
+[their] n=107  angle(nose, next-hop direction at pop) median at t_pop + -1.0s: 30.2  -0.6s: 27.4  -0.4s: 24.7  -0.2s: 18.4  +0.0s: 14.5  +0.2s: 15.5  +0.4s: 13.8
+        angle(nose, current-balloon hindsight dir) median at t_pop -1.0s: 10.3  -0.6s: 22.8  -0.4s: 47.8  -0.3s: 63.0
+        |w| at pop median 0.64 rad/s (p90 1.49); max |w| in last 0.5 s median 0.85; d/dt angle(nose, next dir) at pop median -12.5 deg/s, turning away (>+20 deg/s) in 0.19 of pops
+        angle(velocity at pop, next balloon position at its pop - rocket pos) median 14.4 deg
+[ours_strict] n=58  angle(nose, next-hop direction at pop) median at t_pop + -1.0s: 52.7  -0.6s: 47.7  -0.4s: 41.2  -0.2s: 38.6  +0.0s: 26.3  +0.2s: 23.9  +0.4s: 20.6
+        angle(nose, current-balloon hindsight dir) median at t_pop -1.0s:  5.1  -0.6s: 14.4  -0.4s: 34.2  -0.3s: 43.5
+        |w| at pop median 1.58 rad/s (p90 1.92); max |w| in last 0.5 s median 1.64; d/dt angle(nose, next dir) at pop median -37.8 deg/s, turning away (>+20 deg/s) in 0.19 of pops
+        angle(velocity at pop, next balloon position at its pop - rocket pos) median 24.2 deg
+[ours_free] n=82  angle(nose, next-hop direction at pop) median at t_pop + -1.0s: 64.0  -0.6s: 56.4  -0.4s: 53.4  -0.2s: 40.2  +0.0s: 26.1  +0.2s: 10.0  +0.4s:  3.9
+        angle(nose, current-balloon hindsight dir) median at t_pop -1.0s:  3.5  -0.6s: 14.8  -0.4s: 40.7  -0.3s: 63.9
+        |w| at pop median 1.48 rad/s (p90 2.05); max |w| in last 0.5 s median 1.80; d/dt angle(nose, next dir) at pop median -84.5 deg/s, turning away (>+20 deg/s) in 0.05 of pops
+        angle(velocity at pop, next balloon position at its pop - rocket pos) median 27.1 deg

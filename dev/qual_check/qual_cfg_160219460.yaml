@@ -1,0 +1,8 @@
+# Secret-free local evaluation config built from evaluate.py's main(): no team fields, no submission packing.
+agent_module_path: BalloonPoppingGymEnv/agents/bpc_s4_qual_160219460.py
+agent_class_name: RL3Agent
+agent_kwargs: {}
+agent_name: "s4fast3@160219460 (qualification dry run)"
+scenario_number: 4
+render_mode: null
+leaderboard_submission: false

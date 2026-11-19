@@ -1,0 +1,57 @@
+== burn-time utilization (time-weighted over 11 runs) ==
+metric                   their   ours_strict     ours_free
+U_mean                   0.921         0.906         0.929
+U_med                    0.954         0.961         0.972
+frac_U95                 0.583         0.556         0.618
+frac_U90                 0.724         0.701         0.758
+frac_U80                 0.127         0.160         0.110
+frac_U60                 0.030         0.048         0.023
+fz_share                 0.811         0.830         0.835
+fz_mean                  9.923        10.000        10.322
+fh_mean                  5.820         5.612         5.855
+anet_mean                6.503         6.360         6.443
+a_los_mean               2.015         2.991         3.189
+closing_mean            13.893         7.998        10.894
+speed_mean              17.542        14.098        17.582
+alt_mean               115.465       104.061       124.934
+frac_no_tgt              0.006         0.000         0.000
+burn_s /run              29.75         29.75         29.75
+dv_avail /run           396.89        396.90        396.92
+dv_used /run            364.95        358.38        367.69
+dv_lost /run             32.60         38.77         29.83
+vz_net /run               1.86          4.57         13.45
+
+== ours: lost impulse split (m/s per run, burn) ==
+ours_strict: thr_mean 0.907 frac_thr_full 0.372 frac_thr<0.9 0.302 cos_mean 0.9951 U_model 0.903 | lost: throttle 37.9 gimbal-cos 1.6 rate-limit 4.35 (frac steps 0.199) clamp 8.93 (frac 0.0519)
+   stretch 0.6: frac of burn 0.000  thr_mean nan  dv_lost 0.0 m/s/run
+   stretch 0.8: frac of burn 0.257  thr_mean 1.000  dv_lost 0.0 m/s/run
+   stretch 1.0: frac of burn 0.542  thr_mean 0.905  dv_lost 21.1 m/s/run
+   stretch 1.3: frac of burn 0.201  thr_mean 0.818  dv_lost 16.7 m/s/run
+   no target : frac of burn 0.000  dv_lost 0.0 m/s/run
+ours_free: thr_mean 0.927 frac_thr_full 0.409 frac_thr<0.9 0.246 cos_mean 0.9965 U_model 0.924 | lost: throttle 30.1 gimbal-cos 1.2 rate-limit 5.67 (frac steps 0.201) clamp 2.64 (frac 0.0163)
+   stretch 0.6: frac of burn 0.000  thr_mean nan  dv_lost 0.0 m/s/run
+   stretch 0.8: frac of burn 0.316  thr_mean 1.000  dv_lost 0.0 m/s/run
+   stretch 1.0: frac of burn 0.589  thr_mean 0.910  dv_lost 21.4 m/s/run
+   stretch 1.3: frac of burn 0.094  thr_mean 0.763  dv_lost 8.7 m/s/run
+   no target : frac of burn 0.000  dv_lost 0.0 m/s/run
+
+== per-hop bounds (hops starting in the burn; s) ==
+kind            n   T_act    T_lb   T_mag  mag_loss  dir_loss  U_hop v_rel_hit  (median / mean)
+their         131    2.30    1.78    1.85      0.03      0.22  0.962     16.23  med all
+                     2.49    1.95    2.10      0.15      0.38  0.923     17.73  mean all
+their         120    2.22    1.71    1.81      0.03      0.19  0.963     17.67  med no-first
+                     2.29    1.82    1.95      0.13      0.33  0.922     18.54  mean no-first
+their          11    3.98    2.40    2.50      0.22      0.69  0.957      7.82  med first
+                     4.67    3.38    3.71      0.33      0.97  0.939      8.90  mean first
+ours_strict    80    3.53    2.46    2.67      0.13      0.56  0.921     11.90  med all
+                     3.88    2.62    2.79      0.17      1.09  0.905     12.86  mean all
+ours_strict    69    3.41    2.48    2.68      0.14      0.54  0.906     12.11  med no-first
+                     3.51    2.50    2.68      0.17      0.84  0.895     13.29  mean no-first
+ours_strict    11    6.66    2.38    2.47      0.03      3.37  0.971      7.90  med first
+                     6.21    3.40    3.54      0.14      2.67  0.968     10.15  mean first
+ours_free     105    2.90    2.31    2.47      0.14      0.08  0.940     13.88  med all
+                     3.04    2.64    2.78      0.14      0.26  0.926     15.63  mean all
+ours_free      94    2.58    2.31    2.47      0.14      0.08  0.939     15.36  med no-first
+                     2.76    2.46    2.59      0.13      0.16  0.920     16.54  mean no-first
+ours_free      11    5.66    5.40    5.61      0.21      0.11  0.982      9.21  med first
+                     5.41    4.20    4.37      0.17      1.04  0.982      7.89  mean first

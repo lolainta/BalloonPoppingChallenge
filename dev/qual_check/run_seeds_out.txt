@@ -1,0 +1,6 @@
+seed 10000  popped  10  last_pop 63.51  max_att_err 2.84deg  wall 35s  end 70.4s terminated  launch 33.510000000000005  coast 1  nav_pos 0.43/3.08m  nav_vel 0.14m/s
+seed 10001  popped  11  last_pop 73.0  max_att_err 4.60deg  wall 41s  end 79.1s terminated  launch 41.510000000000005  coast 1  nav_pos 0.46/2.68m  nav_vel 0.16m/s
+{'policy_path': 'runs/s4ent/rl3_policy_40915200.npz', 'sl_path': 'runs/s4ent/rl2_sl_40915200.npz'}  mean 10.50  min 10
+seed 10002  popped   9  last_pop 46.94  max_att_err 2.31deg  wall 17s  end 49.7s terminated  launch 16.02  coast 1  nav_pos 0.42/3.03m  nav_vel 0.14m/s
+seed 10003  popped   9  last_pop 76.94  max_att_err 2.12deg  wall 20s  end 83.9s terminated  launch 46.510000000000005  coast 1  nav_pos 0.45/4.62m  nav_vel 0.14m/s
+{'policy_path': 'runs/s4ent/rl3_policy_40915200.npz', 'sl_path': 'runs/s4ent/rl2_sl_40915200.npz'}  mean 9.00  min 9

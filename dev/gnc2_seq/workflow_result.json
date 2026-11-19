@@ -1,0 +1,339 @@
+[
+ {
+  "key": "decomp",
+  "result": {
+   "key": "decomp",
+   "headline": "In scenario 1 the per-hop hop-start Tmin gap is +0.53 s (per-seed mean, 95% CI +0.43 to +0.67). About 0.29 s of it looks like choice (we often skip the closest balloon) and about 0.24 s is position. The choice part disappears once a 3-balloon lookahead is used: our choices are as close to the 3-step optimum as the top teams' (0.45 vs 0.43 s per hop). So these measurements do not show a better sequence that a multi-balloon output could find.",
+   "numbers": [
+    {
+     "metric": "S1 Tmin to the balloon actually popped next (T_ch), mean",
+     "ours": "2.36 s [2.24, 2.46] (median 2.16)",
+     "other": "theirs 1.73 s [1.68, 1.96] (median 1.68); per-seed paired difference +0.53 [+0.43, +0.67]",
+     "how": "State at each pop (last log step before the status becomes 2), pop-to-pop hops inside the burn only. Reach-time model is the §132 hops.py tmin(): constant force with a_cap = 95th percentile of the flight's thrust, gravity, balloons at constant velocity, 1.5 m hit radius. Bootstrap over the 5 seeds (5000 resamples). Reproduces §132's 2.35 / 1.72."
+    },
+    {
+     "metric": "S1 Tmin to the best alive balloon (T_b1), mean",
+     "ours": "1.85 s [1.73, 2.00]",
+     "other": "theirs 1.64 s [1.59, 1.70]; paired +0.22 [+0.14, +0.30]",
+     "how": "Minimum Tmin over all balloons with status 1 at the pop, excluding the one just popped. Same model and bootstrap."
+    },
+    {
+     "metric": "S1 2nd / 3rd / 5th best Tmin, mean",
+     "ours": "2.35 / 2.64 / 3.01 s",
+     "other": "theirs 2.28 / 2.63 / 3.08 s; paired +0.13 [-0.08, +0.30] / +0.11 [-0.08, +0.28] / -0.00 [-0.13, +0.10]",
+     "how": "Same. The field around us is as dense as around them; only the single nearest balloon is farther away for us."
+    },
+    {
+     "metric": "S1 one-step choice excess (T_ch - T_b1), mean",
+     "ours": "0.51 s [0.35, 0.67] (median 0.27)",
+     "other": "theirs 0.09-0.14 s (median 0.00); paired +0.31 [+0.15, +0.52] (seq.py gives +0.29)",
+     "how": "Per hop. This is 21% of our mean T_ch vs 5% of theirs. The paired choice part plus the paired best-available part (0.29 + 0.24) add up to the whole 0.53 s gap."
+    },
+    {
+     "metric": "S1 rank of the chosen next balloon by Tmin",
+     "ours": "rank 1: 36%, top 2: 64%, top 3: 67%; mean rank 3.41",
+     "other": "theirs rank 1: 70%, top 2: 85%, top 3: 86%; mean 1.85; paired +1.25 [+0.84, +1.58]",
+     "how": "1 + number of alive balloons with smaller Tmin. The chosen balloon was already flying in 100% of our hops and 98% of theirs."
+    },
+    {
+     "metric": "S1 alive balloons within Tmin < 1.0 / 1.5 / 2.0 s, mean",
+     "ours": "0.05 / 0.26 / 0.95",
+     "other": "theirs 0.17 / 0.44 / 1.32; paired -0.08 [-0.12, -0.03] / -0.09 [-0.24, +0.05] / -0.51 [-0.97, -0.12]",
+     "how": "Count per hop start (median is 0 / 0 / 1 for both)."
+    },
+    {
+     "metric": "S1 altitude / speed at the pop, mean",
+     "ours": "127 m / 19.0 m/s",
+     "other": "theirs 132 m / 19.4 m/s; paired +12.7 m [-11.7, +44.6] / +2.5 m/s [-1.6, +7.3]",
+     "how": "z - 20 and |v| at the hop-start state. Neither paired difference is significant."
+    },
+    {
+     "metric": "S1 angle between velocity and the reachable cluster, median",
+     "ours": "centroid of Tmin<=2 s balloons: 41 deg; densest 15 m cluster: 68 deg; the chosen balloon itself: 32 deg",
+     "other": "theirs 24 / 37 / 15 deg; paired seed-mean +4.6 [-4.5, +13.7] / +8.7 [-5.1, +20.9] / +4.1 [-7.7, +11.9]",
+     "how": "Angle from the velocity vector to the intercept-point centroid, to the densest cluster (among Tmin<3 s balloons, the one with the most alive neighbours within 15 m), and to the chosen next balloon. The pooled medians differ, but the per-seed paired differences are not significant."
+    },
+    {
+     "metric": "S1 lookahead regret of the actual choice at depth 3 (xs3)",
+     "ours": "mean 1.34 s per 3-chain = 0.45 s per hop, median 0.00; the 3-step optimum's first balloon equals our choice in 59% of hops",
+     "other": "theirs 1.28 s = 0.43 s per hop, median 0.00, 61%; paired -0.60 [-1.80, +0.73]",
+     "how": "seq.py chains the same model. After each intercept it uses the constant-force solution's end velocity, balloons keep moving, and the hit balloon is removed. Exhaustive search over the 8 best balloons at each level plus the actual choice. xs = cost(chosen first) - min cost."
+    },
+    {
+     "metric": "S1 regret of pure greedy (always the best-Tmin balloon) at depth 3",
+     "ours": "median 4.06 s, mean 6.45 s per 3-chain; the optimum's first balloon is the greedy one in 15% of hops",
+     "other": "theirs median 0.00, mean 2.80; 55%",
+     "how": "Same search. From our states the greedy pick is usually a bad start of a 3-balloon sequence, so our non-greedy picks are consistent with lookahead."
+    },
+    {
+     "metric": "S1 optimal-chain cost per hop from the hop-start state (C_D_opt / D)",
+     "ours": "D1 1.85, D2 2.17, D3 2.49 s",
+     "other": "theirs 1.60 / 2.06 / 2.38 s; paired (sum over the chain) +0.24 [+0.17, +0.31] / +0.11 [+0.02, +0.20] / -0.09 [-1.22, +1.11]",
+     "how": "seq.py. The positional disadvantage shrinks from 0.24 s at depth 1 to an undetectable difference at depth 3 (wide CI)."
+    },
+    {
+     "metric": "S1 actual hop time T, mean",
+     "ours": "2.89 s",
+     "other": "theirs 2.29 s; paired +0.29 [-0.01, +0.60]",
+     "how": "Time between consecutive pops."
+    },
+    {
+     "metric": "S4 (40 seeds 36000-36039) T_ch vs T_b1, mean",
+     "ours": "T_ch 2.24 s [2.16, 2.33] (median 2.18); T_b1 1.79 s [1.74, 1.84]; excess mean 0.46 [0.39, 0.52], median 0.19 [0.04, 0.30]",
+     "other": "no replays exist for scenario 4, so this compares our choice with our own best available",
+     "how": "New free flights with runs/s4bw4/rl3_policy_26342400 + eob=2 eob_tau=3 eob_T=4 (log_s4.py), 315 hops, 8.9 pops per game (sum 355/40). Bootstrap over the 40 seeds."
+    },
+    {
+     "metric": "S4 2nd/3rd/5th best Tmin; balloons within 1.0/1.5/2.0 s; rank of the chosen balloon",
+     "ours": "2.19 / 2.46 / 2.84 s; 0.04 / 0.29 / 1.16; rank 1: 43%, top 2: 56%, top 3: 67%, mean 3.93",
+     "other": "-",
+     "how": "Same definitions as scenario 1."
+    },
+    {
+     "metric": "S4 altitude / speed / cluster angles at the pop",
+     "ours": "alt mean 122 m (median 106); speed mean 15.9 m/s (median 15.5); angles (median) 47 / 73 / 34 deg (centroid / densest / chosen)",
+     "other": "-",
+     "how": "Same definitions as scenario 1."
+    },
+    {
+     "metric": "S4 lookahead regret of the actual choice",
+     "ours": "xs2 0.47 s per hop (median 0.00); xs3 0.42 s per hop (median 0.00); the 3-step optimum's first balloon equals our choice in 63% of hops vs greedy 28%; greedy regret xs3 median 3.72 s",
+     "other": "theirs in S1 was 0.43 s per hop at depth 3 (same level)",
+     "how": "seq.py, same settings."
+    }
+   ],
+   "interpretation": "**Split of the gap.** Looking one hop ahead, the scenario-1 hop-start Tmin gap (+0.53 s per hop, per-seed paired) splits into about 55-60% choice and 40-45% position:\n- **Choice (+0.29 to +0.31 s):** we pick the closest balloon 36% of the time; they pick it 70% of the time.\n- **Position (+0.22 to +0.24 s):** the nearest alive balloon is 0.22 s farther for us.\n\n**The choice part does not survive a 3-balloon lookahead.** I chained the same reach-time model over three balloons:\n- Our actual first picks are as close to the 3-step optimum as theirs: 0.45 vs 0.43 s per hop, paired -0.60 [-1.80, +0.73] per chain.\n- The optimum's first balloon matches our actual pick in 59% of hops (theirs 61%).\n- From our states, pure greedy is poor: median regret about 4 s per 3-chain.\n- Scenario 4 (40 seeds) shows the same pattern: 1-step excess 0.46 s mean, 3-step regret 0.42 s per hop, and 63% of picks match the optimum's first balloon.\n\nSo the policy already skips the nearest balloon for lookahead reasons. In this model, a planner that outputs several balloons would mostly reproduce the choices we already make. I see no measurable sequence headroom here to justify making the model output more balloons.\n\n**The position part is narrow.** The 2nd, 3rd and 5th best Tmin are the same as theirs (paired +0.13, +0.11, -0.00, all CIs include 0). Altitude, speed and the angle to the reachable cluster show no significant paired difference. What differs is only the single nearest balloon: fewer balloons within 1.0 s (-0.08) and within 2.0 s (-0.51). It is not that we are in a sparser part of the balloon field or at a worse altitude.\n\nThat fits §132's finding that they arrive already lined up with the next balloon (34° vs 47-54° turn). Their nearest balloon is usually the one they set up for. But §136 showed that feeding our own next balloon to the GNC does not reproduce this. The optimal-chain cost gap also shrinks with depth: 0.24 s at depth 1, 0.11 at depth 2, and not detectable at depth 3 (CI ±1.2 s). So the remaining edge is a small per-hop positioning advantage, which may partly come from their knowing the seed in advance (§132). A route planner alone is unlikely to close it.\n\n**What this suggests:** a multi-balloon output head is not supported by these data. If anything is worth trying, it is exploration within the current action space (s4temp), not a new output structure.",
+   "caveats": "- **Few seeds in scenario 1.** There are only 5 distinct seeds: our free flights give 39 hops (one flight per seed), and theirs give 116-118 hops from 11 replays, with seeds 0 and 1957083 counted four times each. Bootstrap intervals over 5 seeds are coarse, and the depth-3 CIs are about ±1.2 s.\n- **Selected, seed-aware opponents.** Their runs are leaderboard best-of runs and may be tuned to seeds they knew in advance, so they are not a fair same-information baseline.\n- **Simple reach-time model.** It is §132's constant-force model: no drag, coast, wind drift, attitude lag or handover. In scenario 4, balloon motion is taken as constant velocity even though there are gusts.\n- **Idealised chaining.** The lookahead assumes each intercept is flown at the ideal full-thrust constant-force solution and takes its end velocity. Real arrival velocities differ, and both teams show about 0.43 s per hop of \"regret\" against this model, which gives a sense of how noisy it is. The search is exhaustive only over the 8 best balloons at each level, to depth 3, so longer-horizon gains cannot be ruled out.\n- **Cluster angles** use my own two definitions of \"densest reachable cluster\" (listed in the numbers).\n- **Hops counted.** Only pop-to-pop hops inside the 30 s burn; the launch-to-first-pop hop is excluded. Restricting to hops with at least 3 s of burn left changes nothing (paired T_ch +0.56, T_b1 +0.23, excess +0.33).\n- **Scenario-4 runs.** Used eob=2 eob_tau=3 eob_T=4 as instructed, and ran locally with 12 processes.\n- **Decision log not updated.** I did not add these results to dev/DECISION_LOG.md, because the task rules forbid editing existing files. The orchestrator should record them there.",
+   "files": [
+    "./dev/gnc2_seq/decomp/log_s4.py",
+    "./dev/gnc2_seq/decomp/decomp.py",
+    "./dev/gnc2_seq/decomp/seq.py",
+    "./dev/gnc2_seq/decomp/hops_s1.csv",
+    "./dev/gnc2_seq/decomp/hops_s4.csv",
+    "./dev/gnc2_seq/decomp/seq_s1.csv",
+    "./dev/gnc2_seq/decomp/seq_s4.csv",
+    "./dev/gnc2_seq/decomp/data/"
+   ]
+  },
+  "verdict": {
+   "checks": [
+    {
+     "claim": "S1 T_ch mean ours 2.36 [2.24,2.46] (median 2.16), theirs 1.73 [1.68,1.96]; paired +0.53 [+0.43,+0.67]",
+     "status": "CONFIRMED",
+     "corrected_value": "ours 2.36 [2.24,2.46] med 2.15; theirs 1.73 [1.68,1.96] med 1.68; paired +0.53 [+0.42,+0.66], per-seed diffs 0.78/0.37/0.55/0.47/0.49 (all 5 positive)",
+     "note": "Recomputed with my own code (dev/gnc2_seq/verify_decomp/v1.py, v2.py): pop step taken from S directly, state at step j-1, Tmin grid 0.002 s. Stays the same with one shared a_cap of 14.2 for every flight (+0.54) and with the state taken 0.1 s before the pop (+0.53). Their per-flight a_cap values are similar (ours 13.9-14.9, theirs 13.4-14.6), so a_cap does not bias the result. No two balloons popped in the same step. ours_free keeps one flight per seed (5 distinct seeds), and duplicate flights of the same seed are bit-identical."
+    },
+    {
+     "claim": "S1 T_b1 ours 1.85 vs theirs 1.64, paired +0.22 [+0.14,+0.30]; 2nd/3rd/5th best paired +0.13/+0.11/-0.00 with CIs including 0",
+     "status": "CONFIRMED",
+     "corrected_value": "T_b1 1.85 vs 1.63, paired +0.22 [+0.14,+0.30]; T_b2/b3/b5 paired +0.13 [-0.07,+0.30] / +0.11 [-0.08,+0.28] / -0.00 [-0.13,+0.10]",
+     "note": "The alive set is status==1 only, so balloons still on the ground are excluded. The just-popped balloon, and any balloon popped at or before that step, are excluded. Unreachable balloons get a 15 s cap."
+    },
+    {
+     "claim": "S1 excess T_ch-T_b1 ours 0.51 (median 0.27) vs theirs ~0.09-0.14; paired +0.31 [+0.15,+0.52]; choice + position = 0.53",
+     "status": "CONFIRMED",
+     "corrected_value": "paired +0.32 [+0.15,+0.52]",
+     "note": "The split into choice + position adds up by construction, since T_ch = T_b1 + excess."
+    },
+    {
+     "claim": "S1 rank of the chosen balloon: ours rank1 36% / top2 64% / top3 67%, mean 3.41; theirs 70/85/86%, mean 1.85; paired +1.25",
+     "status": "CONFIRMED",
+     "corrected_value": "ours 0.36/0.64/0.67, mean 3.41; theirs 0.70/0.85/0.86, mean 1.86; paired +1.23 [+0.82,+1.58]; the chosen balloon was already flying in 100% / 98% of hops",
+     "note": ""
+    },
+    {
+     "claim": "S1 alive balloons within Tmin<1.0/1.5/2.0 s: paired -0.08 [-0.12,-0.03] / -0.09 [-0.24,+0.05] / -0.51 [-0.97,-0.12]",
+     "status": "REFUTED",
+     "corrected_value": "n15 paired -0.16 [-0.25,-0.07], which is significant (n10 -0.08 and n20 -0.54 [-0.94,-0.15] agree with theirs)",
+     "note": "n15 depends on the Tmin grid. With a 0.002 s grid, 2 of their hops on seed 14 and 2 on seed 205 have Tmin just under 1.5 s. On the 0.01 s grid those same hops come out at 1.50 and are not counted. Minor: it makes the 1.5 s count difference significant, but it does not change the conclusion."
+    },
+    {
+     "claim": "S1 altitude 127 vs 132 m, speed 19.0 vs 19.4 m/s; paired +12.7 m [-11.7,+44.6], +2.5 m/s [-1.6,+7.3]",
+     "status": "CONFIRMED",
+     "corrected_value": "same",
+     "note": "I did not recompute the cluster angles."
+    },
+    {
+     "claim": "S1 depth-3 lookahead regret: ours xs3 0.45 s/hop (median 0), 59% match vs theirs 0.43 s/hop, 61%; paired -0.60 [-1.80,+0.73]; greedy regret ours median 4.06 (15%) vs theirs 0.00 (55%); C_D_opt/D ours 1.85/2.17/2.49 vs theirs 1.60/2.06/2.38",
+     "status": "CONFIRMED",
+     "corrected_value": "I got exactly the same values with my own chained search (vseq.py, K=8, same end-velocity formula): paired xs3 -0.60 [-1.83,+0.73]; C_D_opt paired +0.24 / +0.11 / -0.09",
+     "note": "Also robust to changing the search: (a) end velocity recomputed with the miss reduced by the hit radius and the force clipped to a_cap: 0.42 vs 0.36 s/hop, matching 67% vs 62%; (b) K=12: 0.57 vs 0.56 s/hop, 56% vs 56%. Means come from heavy tails (xs3 max 17-26 s, reach times capped at 15 s). With xs3 clipped at 3 s, paired +0.05 [-0.49,+0.60]. Caveat the report leaves out: at depth 2 our choice looks worse (xs2 median 0.53 vs 0.00; P(xs2>0.5) 0.51 vs 0.32), and it only drops back to median 0 at depth 3. The per-chain CI's upper bound of about +0.73 s (~0.24 s/hop) cannot rule out a real choice disadvantage. So 'as close as theirs' means 'not detectably different', not 'shown equal'."
+    },
+    {
+     "claim": "S1 actual hop time paired +0.29 [-0.01,+0.60]; tb_left>=3 subset unchanged (T_ch +0.56, T_b1 +0.23, excess +0.33)",
+     "status": "CONFIRMED",
+     "corrected_value": "T 2.89 vs 2.29, paired +0.29 [-0.01,+0.60]; subset +0.56 / +0.23 / +0.33",
+     "note": ""
+    },
+    {
+     "claim": "S4: 40 seeds 36000-36039, 315 hops, '8.9 pops per game (sum 355/40)'",
+     "status": "REFUTED",
+     "corrected_value": "40 unique seeds and 315 hops are correct. The games actually score 375 pops = 9.38 per game; 355 counts only the pops inside the 30 s burn (315 hops + 40 first pops)",
+     "note": "The number is mislabeled: 8.9 is in-burn pops per game, not the game score. 9.38 per game matches the policy's known level of ~9.3. I re-flew seeds 36003/36017/36029/36039 with runs/s4bw4/rl3_policy_26342400 + eob=2 eob_tau=3 eob_T=4: the pop lists are identical to the logged npz, so the logs are genuine and deterministic."
+    },
+    {
+     "claim": "S4 T_ch 2.24 [2.16,2.33] (median 2.18), T_b1 1.79 [1.74,1.84], excess mean 0.46 [0.39,0.52] median 0.19; 2nd/3rd/5th 2.19/2.46/2.84; n 0.04/0.29/1.16; rank 43/56/67%, mean 3.93; alt 122 m, speed 15.9",
+     "status": "CONFIRMED",
+     "corrected_value": "T_ch 2.24 [2.16,2.32] med 2.18; T_b1 1.78 [1.73,1.84]; excess 0.46 [0.39,0.52] med 0.19 [0.05,0.31]; T_b2/3/5 2.19/2.46/2.83; n 0.04/0.31/1.18; rank 0.43/0.56/0.67 mean 3.94; alt 122 (med 106); speed 15.9 (med 15.5)",
+     "note": "Differences are only in the grid/threshold at the second decimal."
+    },
+    {
+     "claim": "S4 lookahead: xs2 0.47 s/hop, xs3 0.42 s/hop (median 0), 63% match optimum vs greedy 28%, greedy xs3 median 3.72",
+     "status": "CONFIRMED",
+     "corrected_value": "identical with K=8; with the fixed end velocity: 0.44 / 0.36 s/hop, 64% / 30%; with K=12: 0.56 / 0.45 s/hop, 56% / 26%",
+     "note": ""
+    },
+    {
+     "claim": "Headroom-search checks (exact branch copies, wall-clock truncation, same seeds, K=1 chaos baseline)",
+     "status": "UNCERTAIN",
+     "corrected_value": "n/a",
+     "note": "These do not apply to this decomp result, which has no simulator branching. They belong to the separate s4_seq_search measurement, which I did not verify here."
+    }
+   ],
+   "overall": "holds",
+   "summary": "CONFIRMED on the substance. My own code (./dev/gnc2_seq/verify_decomp/: v1.py, v2.py, v4.py, vseq.py, vsum.py, refly.py) reproduces all the headline numbers: S1 T_ch gap +0.53 [+0.42,+0.66] with all 5 per-seed diffs positive, T_b1 gap +0.22, excess +0.32, the rank shares, the depth-3 regret 0.45 vs 0.43 s/hop with 59%/61% matching, greedy regret median 4.06, and every S4 number. They hold with one shared a_cap for all flights, with the state taken 0.1 s before the pop, with a physically corrected chaining end velocity, and with K=12. The data setup is sound: ground balloons are excluded, ours_free has one flight per distinct seed and same-seed flights are identical, no two balloons popped in the same step, and the S4 logs re-fly bit-identically. Two minor numbers are wrong: (1) the 1.5 s count gap is actually -0.16 [-0.25,-0.07], which is significant (the report's -0.09 [-0.24,+0.05] comes from the 0.01 s grid); (2) '8.9 pops per game (355/40)' counts only in-burn pops, and the real S4 game score is 375/40 = 9.38. Caveat the report leaves out: at depth 2 our choice regret median is 0.53 s vs 0.00 for theirs, and it only drops to 0 at depth 3. The depth-3 paired CI (upper bound about +0.24 s/hop) cannot rule out a small choice disadvantage. So 'no sequence headroom' means 'not detected with 5 seeds under this model', not 'shown absent'. The headroom-search checks in the brief apply to the separate s4_seq_search result, not this one."
+  }
+ },
+ {
+  "key": "headroom",
+  "result": {
+   "key": "s4_seq_search",
+   "headline": "In scenario 4, searching over target order finds +0.72 ± 0.12 pops/seed over the policy (beam 4, K 5, n=64; +0.83 ± 0.12 taking the best of two settings). Hop-start Tmin only drops 0.17 s (2.40 → 2.20 s median, theirs ~1.72 s). That lands between the +0.5 and +1 decision lines: sequence planning has moderate room, but it does not close the Tmin gap to the leaders.",
+   "numbers": [
+    {
+     "metric": "Pops/seed: policy vs best route found (beam 4, top-5 targets, n=64, seeds 36100-36163)",
+     "ours": "policy 9.625, best 10.344, paired gain +0.719 ± 0.117 (SE)",
+     "other": "Decision lines: +0.5 means little room; +1 with clearly lower Tmin means worth pursuing",
+     "how": "Scenario 4. Policy = s4bw4 rl3_policy_26342400 with its own SL file and eob=2 eob_tau=3 eob_T=4. 'Policy' is the plain RL3Agent flown in its own process. 'Best' is a beam search in the real simulator: at every pop, branch over the policy's top-5 next targets (speed = policy argmax); each branch is flown by policy + GNC until the next pop; keep the 4 best by (pops, earlier time) plus the pure-policy route; fly out after burn-out."
+    },
+    {
+     "metric": "How the gain is spread (beam 4, K 5)",
+     "ours": "+0: 35 seeds, +1: 16, +2: 9, +3: 4; 45% of seeds gain at least 1; median gain 0",
+     "other": "n/a",
+     "how": "Per-seed best minus policy, 64 seeds"
+    },
+    {
+     "metric": "Smaller search setting (beam 2, K 3, n=64)",
+     "ours": "gain +0.422 ± 0.089; beam 4/K 5 beats it by +0.297 ± 0.108 on the same seeds",
+     "other": "Beam 4/K 5 does worse on 5 of 64 seeds (beam search is not monotone)",
+     "how": "Same seeds, same code, paired"
+    },
+    {
+     "metric": "Best of beam 2/K 3 and beam 4/K 5 per seed (tightest lower bound we have)",
+     "ours": "+0.828 ± 0.121 pops/seed (+0: 31, +1: 18, +2: 10, +3: 5)",
+     "other": "n/a",
+     "how": "Per-seed max of the two best routes minus policy, n=64"
+    },
+    {
+     "metric": "Larger search (beam 8, K 6), only 7 seeds finished (36100-36106)",
+     "ours": "+0.714 ± 0.286; on the same 7 seeds beam 4/K 5 gives +1.000 ± 0.535 and the best of all three +1.143 ± 0.508",
+     "other": "Too few seeds to say how the gain scales",
+     "how": "The bigger beam found fewer pops than beam 4 on seeds 36100 (9 vs 11) and 36101 (10 vs 11), and more on 36102 (11 vs 10)"
+    },
+    {
+     "metric": "Hop-start Tmin of the next balloon actually popped (hops inside the burn)",
+     "ours": "median 2.40 s (policy) vs 2.20 s (best); paired per-seed mean -0.173 ± 0.033 s; on the 29 seeds that gained, -0.333 ± 0.059 s",
+     "other": "Top teams ~1.72 s (§132)",
+     "how": "GNCAgent._reach_time from p_hat/v_hat at the moment of the previous pop to the next popped balloon, as in dev/gnc2_gate/gate.py. Tmin capped at 8 s for the means. Beam 4, K 5, n=64."
+    },
+    {
+     "metric": "Median time between pops inside the burn",
+     "ours": "2.75 s (policy) vs 2.56 s (best); paired per-seed mean -0.236 ± 0.034 s (seeds that gained: -0.471 ± 0.043 s)",
+     "other": "Top teams ~1.75-2.2 s (§61)",
+     "how": "Differences between consecutive in-burn pop times, pooled median plus paired per-seed mean"
+    },
+    {
+     "metric": "Bend angle between consecutive balloons",
+     "ours": "median 41.3° (policy) vs 38.6° (best); paired mean -2.6 ± 1.0°; seeds that gained -5.2 ± 1.9°",
+     "other": "Top teams ~34° (§132)",
+     "how": "Angle between the pop-position vectors (P_i - P_i-1) and (P_i+1 - P_i), in-burn hops"
+    },
+    {
+     "metric": "Where the gain comes from",
+     "ours": "in-burn pops +0.859 ± 0.113, post-burn pops -0.141 ± 0.070; the best route overrides the policy's first choice 1.75 times per seed (out of ~11 branch points)",
+     "other": "n/a",
+     "how": "Beam 4, K 5, split at burn end. Branch ranks used: 589 top-1, 41 rank-2, 32 rank-3, 21 rank-4, 18 rank-5."
+    },
+    {
+     "metric": "Are the simulator copies exact?",
+     "ours": "The pure-policy route inside the search equals the free run pop-for-pop (same times and balloon ids) on 64/64 seeds (both settings) and 7/7 (beam 8); 0 wall-clock truncations",
+     "other": "n/a",
+     "how": "Branches are copied with os.fork (the whole process image, including RocketPy solvers and RNG state) and the env's 600 s wall clock is restarted before every advance. The deepcopy+rebind version gave identical results on 2 smoke seeds."
+    }
+   ],
+   "interpretation": "Should the model plan a multi-balloon sequence? Yes, a better order exists, but it is worth under one pop per seed with our current flight, and it does not explain why the leaders reach the next balloon faster.\n\n- **How much room:** with the policy + GNC flying every hop, better target orders add at least +0.72 pops/seed (+0.83 taking the best of two settings). That is above the +0.5 \"little room\" line. It is a lower bound: beam search does not reliably improve with more beam, only one speed level was searched, and the ranking ignores post-burn pops.\n- **The Tmin gap stays:** the best routes cut hop-start Tmin by only 0.17 s per seed on average (median 2.40 → 2.20 s), and 0.33 s on the seeds that gained. The leaders are at ~1.72 s, so a better order closes only about a quarter to a third of that gap. Time between pops drops 2.75 → 2.56 s and the bend angle 41° → 39°; the leaders are at ~1.75-2.2 s and ~34°.\n- **Why it matters for the design:** the gains come from overriding the policy's top choice at only ~1.75 of ~11 branch points per seed. That fits the earlier scenario-1 result (+0.84, §63) and the fact that the policy already agrees with the search 93-95% of the time.\n- **What it means:** a sequence output (or search at run time) could plausibly add ~+0.7-1 pop/seed. It will not reach the leaders' pace; the rest of the gap needs a different flight (for example, arriving at each balloon already moving toward the next), not just a better order.\n- **Recommendation:** worth pursuing as a moderate gain, not as the answer to \"why can't we fly as fast as them\". It does not meet the \"≥ +1 with clearly lower Tmin\" rule.",
+   "caveats": "- **Search setup:** one speed level (the policy's choice) and the policy's own top-K targets only. Each branch is flown by the policy, which can switch targets mid-hop. Routes are ranked by (in-burn pops, earlier time), which is why the best routes lose 0.14 post-burn pops.\n- **Headroom is a lower bound:** a bigger search does not always find more — beam 4/K 5 lost to beam 2/K 3 on 5 of 64 seeds, and beam 8/K 6 lost to beam 4 on 2 of 7. Taking the best over settings gives the tighter bound, +0.83.\n- **Beam 8 result is weak:** only 7 seeds finished in the ~3 h budget, so the trend with search size is only firm between beam 2/K 3 and beam 4/K 5.\n- **Tmin is apples-to-oranges:** our Tmin is from our GNC's estimate at the moment of each pop. The ~1.72 s leader figure comes from §132 replays of scenario 1 on 5 seeds, not scenario 4.\n- **Process limit:** I switched from deepcopy copies to fork copies so each seed finishes in a few minutes and every run stays under the 10-minute command limit. It is resumable per seed. At most 12 branches ever ran at once (a shared semaphore), but up to ~75 idle waiting processes existed at a time. Memory used stayed at or below 17 GB of 62.\n- **Cut-short runs:** one run hit its timeout mid-seed; that seed was simply rerun. Leftover socket files in /tmp were removed and no processes were left running.\n- **Machine load:** another job was using ~24 cores the whole time (load average 30-36), so wall times are inflated.\n- **Scope:** diagnosis only. No routes were saved for training, and no existing files were edited.",
+   "files": [
+    "./dev/gnc2_seq/s4_seq_search/seq_fork.py",
+    "./dev/gnc2_seq/s4_seq_search/seq_search_deepcopy.py",
+    "./dev/gnc2_seq/s4_seq_search/report.py",
+    "./dev/gnc2_seq/s4_seq_search/union.py",
+    "./dev/gnc2_seq/s4_seq_search/out/b4k5.jsonl",
+    "./dev/gnc2_seq/s4_seq_search/out/b2k3.jsonl",
+    "./dev/gnc2_seq/s4_seq_search/out/b8k6.jsonl",
+    "./dev/gnc2_seq/s4_seq_search/out/free.jsonl",
+    "./dev/gnc2_seq/s4_seq_search/out/smoke_deepcopy.jsonl"
+   ]
+  },
+  "verdict": {
+   "checks": [
+    {
+     "claim": "Beam 4/K 5, n=64 (36100-36163): the policy averages 9.625 pops, the best route 10.344, paired gain +0.719 ± 0.117. Gain spread: +0: 35, +1: 16, +2: 9, +3: 4; median 0; 45% of seeds gain at least 1",
+     "status": "CONFIRMED",
+     "corrected_value": "",
+     "note": "Recomputed from out/b4k5.jsonl and out/free.jsonl with my own script (dev/gnc2_seq/verify_headroom/recompute.py). There are 64 distinct seeds in each file, with no duplicates and no errors. On every seed the best route's pop count equals the length of its route and equals max(finished_pops). No best route pops the same balloon twice, and no seed loses pops."
+    },
+    {
+     "claim": "Beam 2/K 3 gains +0.422 ± 0.089; beam 4/K 5 beats it by +0.297 ± 0.108 and is worse on 5 seeds; the per-seed best of the two gives +0.828 ± 0.121 (+0: 31, +1: 18, +2: 10, +3: 5)",
+     "status": "CONFIRMED",
+     "corrected_value": "",
+     "note": "Recomputed exactly."
+    },
+    {
+     "claim": "Beam 8/K 6 on 7 seeds: +0.714 ± 0.286; beam 4/K 5 gives +1.000 ± 0.535 on those seeds; best of all three +1.143 ± 0.508; beam 8 found 9 vs 11 on 36100, 10 vs 11 on 36101, 11 vs 10 on 36102",
+     "status": "CONFIRMED",
+     "corrected_value": "",
+     "note": "Recomputed exactly."
+    },
+    {
+     "claim": "Hop-start Tmin median 2.40 s (policy) vs 2.20 s (best); paired -0.173 ± 0.033 s; -0.333 ± 0.059 s on the 29 seeds that gained. Gap between pops 2.75 vs 2.56 s, paired -0.236 ± 0.034 s (-0.471 ± 0.043 s on gaining seeds). Bend 41.3° vs 38.6°, paired -2.6 ± 1.0° (-5.2 ± 1.9°)",
+     "status": "CONFIRMED",
+     "corrected_value": "",
+     "note": "Recomputed with my own in-burn slicing. Alignment in summarize() is correct: tmin[i] = _reach_time at pop i, evaluated for the balloon popped at i+1. No Tmin value is inf/None, so the 8 s cap never applies. Bend uses the rocket position estimate p_hat at each pop. Caveat already stated in the claim: the ~1.72 s leader figure is from scenario 1 on 5 seeds."
+    },
+    {
+     "claim": "Where the gain comes from: in-burn pops +0.859 ± 0.113, post-burn -0.141 ± 0.070; 1.75 non-top-1 choices per seed out of ~11 branch points; rank use 589/41/32/21/18",
+     "status": "CONFIRMED",
+     "corrected_value": "",
+     "note": "Recomputed exactly (10.95 branch points per seed)."
+    },
+    {
+     "claim": "Copies are exact: the pure-policy route equals the free run on 64/64 seeds (both settings) and 7/7 (beam 8); 0 truncations",
+     "status": "CONFIRMED",
+     "corrected_value": "",
+     "note": "(a) The files confirm greedy==free on 64/64, 64/64 and 7/7, with trunc=false everywhere. (b) I re-ran the free RL3Agent in fresh spawned processes on 7 seeds (36100, 36101, 36107, 36120, 36133, 36150, 36163): pops were identical to free.jsonl, times included. (c) Stronger test, since greedy==free only covers rank-0 paths: I re-flew the reported best route (its rank sequence) of 7 gaining seeds (36144, 36128, 36101, 36100, 36161, 36156, 36149) in a single process with no fork or deepcopy. All 7 reproduced the reported route pop-for-pop, times included (dev/gnc2_seq/verify_headroom/replay.py). So the non-greedy best routes are real, reachable outcomes. The wall clock is reset before every advance, and truncation is recorded (sim time < 59 s at truncation)."
+    },
+    {
+     "claim": "The reported best is not inflated by chaos",
+     "status": "CONFIRMED",
+     "corrected_value": "Chaos-only selection gives +0.071 ± 0.050 pops/seed (n=28) against +0.607 ± 0.195 for the sequence search on the same seeds; search minus chaos = +0.536 ± 0.182",
+     "note": "My own fork-based beam (dev/gnc2_seq/verify_headroom/chaos_beam.py): same beam 4 / 5 children, same ranking and keep rule. Every child flies the policy's own top-1 target and speed; children 1-4 only get p_hat += N(0, 0.2 m) at the branch point, which is about the filtered GNSS error level (2 m accuracy, k_pos 0.02). With 0.02 m the perturbation changed nothing at all on 2 seeds. With 0.2 m and seeds 36100-36122 + 36124/36125/36129/36144: greedy==free on 28/28, 0 truncations, and the chaos best beat the policy on only 2 seeds (36116 and 36144, +1 each). Chaos inflation is therefore about 0.07 pops/seed and does not change the headline. The 28-seed subset gains a bit less (+0.61) than all 64 seeds (+0.72)."
+    },
+    {
+     "claim": "The deepcopy+rebind version gave identical results on 2 smoke seeds",
+     "status": "REFUTED",
+     "corrected_value": "Pop counts and the pure-policy routes are the same, but the routes are not identical: on seed 36100 the best routes differ in pop times (50.99/52.33 vs 51.00/52.35) and in one forced rank (2 vs 0, same balloon 79); on 36101 finished_pops differ ([8,8,9,9] vs [8,9,9])",
+     "note": "Minor. It suggests the deepcopy copies are slightly inexact. The headline uses fork copies, and my replay without fork reproduces those exactly, so the result is not affected."
+    },
+    {
+     "claim": "Process/memory/load statements (at most 12 flying at once, about 75 idle processes, 17 GB or less)",
+     "status": "UNCERTAIN",
+     "corrected_value": "",
+     "note": "Not reproducible after the fact. The code does use a shared BoundedSemaphore(slots=12) around every flight."
+    }
+   ],
+   "overall": "holds",
+   "summary": "CONFIRMED. I recomputed every number in the report (beam 4/K 5, beam 2/K 3, the best of both, beam 8/K 6, the gain spread, Tmin, gap between pops, bend angle, the in-burn/post-burn split, rank use) from the jsonl files with my own code, and all of them reproduce exactly. There are 64 distinct seeds with no duplicates and no errors, and no route is truncated.\n\nChecks in the simulator, each capped at 8 active processes:\n- **Free runs:** fresh-process free runs match free.jsonl pop-for-pop on 7/7 seeds.\n- **Best routes:** re-flying the reported best route's rank sequence in one process, with no fork or deepcopy, reproduces it exactly on 7/7 gaining seeds. The search's non-greedy routes are real outcomes, not copy artifacts.\n- **Chaos control:** same beam, but every child flies the policy's own target and only gets a GNSS-noise-sized 0.2 m nudge to the position estimate. This adds only +0.071 ± 0.050 pops/seed (n=28), against +0.607 ± 0.195 for the sequence search on the same seeds. Chaos explains about 0.07 of the gain.\n- **Tmin computation:** alignment is correct (reach time at pop i to the balloon popped at i+1), and no value was inf.\n\nOne small overstatement: the deepcopy and fork smoke runs have the same pop counts, but not identical routes (seed 36100 differs in pop times and in one rank). This does not affect the result, because the headline uses fork copies, which I verified independently.\n\nThe conclusion stands: about +0.7 pops/seed (+0.83 taking the best of two settings). Hop-start Tmin only drops 2.40 → 2.20 s, while the leaders are at ~1.72 s.\n\nScripts and outputs are in ./dev/gnc2_seq/verify_headroom/: recompute.py, replay.py, chaos_beam.py, cmp.py, out_c20.jsonl and out_c02.jsonl."
+  }
+ }
+]

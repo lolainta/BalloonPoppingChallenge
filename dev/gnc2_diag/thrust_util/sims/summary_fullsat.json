@@ -1,0 +1,136 @@
+[
+ {
+  "name": "10_CoolBa",
+  "variant": "fullsat",
+  "pops": 5,
+  "pops_burn": 5,
+  "hops": [
+   7.51,
+   2.89,
+   2.33,
+   3.29,
+   2.38
+  ]
+ },
+ {
+  "name": "10_SpaceY",
+  "variant": "fullsat",
+  "pops": 5,
+  "pops_burn": 5,
+  "hops": [
+   3.52,
+   3.91,
+   3.76,
+   12.92,
+   4.12
+  ]
+ },
+ {
+  "name": "11_Mochi",
+  "variant": "fullsat",
+  "pops": 4,
+  "pops_burn": 4,
+  "hops": [
+   6.85,
+   6.34,
+   6.89,
+   5.65
+  ]
+ },
+ {
+  "name": "11_near_miss",
+  "variant": "fullsat",
+  "pops": 6,
+  "pops_burn": 5,
+  "hops": [
+   4.5,
+   3.91,
+   3.47,
+   2.62,
+   4.24,
+   11.5
+  ]
+ },
+ {
+  "name": "12_Apex",
+  "variant": "fullsat",
+  "pops": 6,
+  "pops_burn": 5,
+  "hops": [
+   6.55,
+   7.72,
+   4.24,
+   3.87,
+   3.02,
+   4.98
+  ]
+ },
+ {
+  "name": "13_Apex",
+  "variant": "fullsat",
+  "pops": 6,
+  "pops_burn": 5,
+  "hops": [
+   6.55,
+   7.72,
+   4.24,
+   3.87,
+   3.02,
+   4.98
+  ]
+ },
+ {
+  "name": "13_Yaka",
+  "variant": "fullsat",
+  "pops": 0,
+  "pops_burn": 0,
+  "hops": []
+ },
+ {
+  "name": "14_SpaceBerry",
+  "variant": "fullsat",
+  "pops": 2,
+  "pops_burn": 2,
+  "hops": [
+   6.14,
+   13.24
+  ]
+ },
+ {
+  "name": "16_SpaceBerry",
+  "variant": "fullsat",
+  "pops": 5,
+  "pops_burn": 5,
+  "hops": [
+   4.77,
+   1.62,
+   6.52,
+   3.76,
+   6.64
+  ]
+ },
+ {
+  "name": "16_TeamDJ",
+  "variant": "fullsat",
+  "pops": 3,
+  "pops_burn": 3,
+  "hops": [
+   6.36,
+   7.57,
+   13.62
+  ]
+ },
+ {
+  "name": "18_Taoyuan",
+  "variant": "fullsat",
+  "pops": 5,
+  "pops_burn": 5,
+  "hops": [
+   4.77,
+   1.62,
+   6.52,
+   3.76,
+   6.64
+  ]
+ }
+]

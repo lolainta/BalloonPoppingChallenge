@@ -1,0 +1,26 @@
+--- ours_strict
+  10_CoolBa       last pop t+29.40  tail 0.60s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target  52.8 m
+  10_SpaceY       last pop t+27.47  tail 2.53s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target   6.8 m
+  11_Mochi        last pop t+27.61  tail 2.39s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target  28.0 m
+  11_near_miss    last pop t+26.52  tail 3.48s  frac steps target reachable-before-burnout 0.29  targets 1  min dist to last target   4.3 m
+  12_Apex         last pop t+29.42  tail 0.58s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target  52.8 m
+  13_Apex         last pop t+29.42  tail 0.58s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target  52.8 m
+  13_Yaka         last pop t+29.90  tail 0.10s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target  29.5 m
+  14_SpaceBerry   last pop t+29.08  tail 0.92s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target   4.7 m
+  16_SpaceBerry   last pop t+28.02  tail 1.98s  frac steps target reachable-before-burnout 0.14  targets 1  min dist to last target   2.9 m
+  16_TeamDJ       last pop t+25.80  tail 4.20s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target  58.0 m
+  18_Taoyuan      last pop t+28.02  tail 1.98s  frac steps target reachable-before-burnout 0.14  targets 1  min dist to last target   2.9 m
+  tail mean 1.76 s, reachable frac mean 0.05, min-dist-to-last-target median 28.0 m
+--- ours_free
+  10_CoolBa       last pop t+28.33  tail 1.67s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target   2.3 m
+  10_SpaceY       last pop t+28.39  tail 1.61s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target   2.5 m
+  11_Mochi        last pop t+28.33  tail 1.67s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target   2.3 m
+  11_near_miss    last pop t+27.74  tail 2.26s  frac steps target reachable-before-burnout 0.09  targets 1  min dist to last target   0.2 m
+  12_Apex         last pop t+30.00  tail 0.00s  frac steps target reachable-before-burnout nan  targets 0  min dist to last target   nan m
+  13_Apex         last pop t+30.00  tail 0.00s  frac steps target reachable-before-burnout nan  targets 0  min dist to last target   nan m
+  13_Yaka         last pop t+28.33  tail 1.67s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target   2.3 m
+  14_SpaceBerry   last pop t+27.04  tail 2.96s  frac steps target reachable-before-burnout 0.00  targets 2  min dist to last target  32.1 m
+  16_SpaceBerry   last pop t+30.00  tail 0.00s  frac steps target reachable-before-burnout nan  targets 0  min dist to last target   nan m
+  16_TeamDJ       last pop t+28.33  tail 1.67s  frac steps target reachable-before-burnout 0.00  targets 1  min dist to last target   2.3 m
+  18_Taoyuan      last pop t+30.00  tail 0.00s  frac steps target reachable-before-burnout nan  targets 0  min dist to last target   nan m
+  tail mean 1.23 s, reachable frac mean 0.01, min-dist-to-last-target median 2.3 m

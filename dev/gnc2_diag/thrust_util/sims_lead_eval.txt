@@ -1,0 +1,12 @@
+variant    runs  pops burnpops hop_med hop_mean first_med U_mean thr_mean  T_lb  magL  dirL  vrel dPops_vs_base
+base         11    80       80    3.41     3.51      6.66  0.906    0.907  2.50  0.17  0.84  12.1  +0 +0 +0 +0 +0 +0 +0 +0 +0 +0 +0
+lead05       11    87       87    3.10     3.22      6.66  0.910    0.912  2.38  0.19  0.65  13.1  +0 +0 +2 +0 +0 +0 +0 +1 +1 +2 +1
+lead10       11    88       85    3.08     3.15      6.67  0.914    0.916  2.43  0.20  0.52  14.9  +2 +2 +1 +1 +0 +0 +1 +0 +0 +1 +0
+lead15       11    83       78    3.09     3.31      6.67  0.915    0.917  2.33  0.18  0.80  11.7  -1 +0 +0 +0 +1 +1 -2 +0 +2 +0 +2
+lead10f      11    81       75    3.23     3.47      6.67  0.913    0.914  2.36  0.23  0.89  13.9  +1 +1 +0 +1 -2 -2 +0 -1 +1 +1 +1
+their        n=116 T_act med 2.23 | T_lb med 1.71 mean 1.82 | T_lb(v0=vb) med 2.75 mean 2.91 | velocity bonus mean +1.09 | range med 36.8 dz med +7.3 speed0 med 20.1 closing0 med +14.7 cos(vrel, LOS) med +0.95
+base         n= 69 T_act med 3.41 | T_lb med 2.48 mean 2.51 | T_lb(v0=vb) med 2.98 mean 2.94 | velocity bonus mean +0.43 | range med 34.2 dz med +9.0 speed0 med 16.6 closing0 med +9.7 cos(vrel, LOS) med +0.81
+lead05       n= 75 T_act med 3.12 | T_lb med 2.34 mean 2.39 | T_lb(v0=vb) med 2.88 mean 2.92 | velocity bonus mean +0.53 | range med 34.1 dz med +9.0 speed0 med 16.3 closing0 med +9.1 cos(vrel, LOS) med +0.84
+lead10       n= 76 T_act med 3.08 | T_lb med 2.28 mean 2.43 | T_lb(v0=vb) med 2.84 mean 2.91 | velocity bonus mean +0.48 | range med 37.4 dz med +7.0 speed0 med 16.7 closing0 med +10.2 cos(vrel, LOS) med +0.81
+lead15       n= 70 T_act med 3.00 | T_lb med 2.19 mean 2.30 | T_lb(v0=vb) med 2.90 mean 2.92 | velocity bonus mean +0.62 | range med 33.6 dz med +9.2 speed0 med 17.1 closing0 med +8.4 cos(vrel, LOS) med +0.76
+lead10f      n= 70 T_act med 3.23 | T_lb med 2.23 mean 2.36 | T_lb(v0=vb) med 2.67 mean 2.84 | velocity bonus mean +0.48 | range med 33.5 dz med +7.4 speed0 med 16.4 closing0 med +8.9 cos(vrel, LOS) med +0.75

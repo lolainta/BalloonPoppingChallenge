@@ -1,0 +1,5 @@
+launch_time=20
+launch_time=30
+launch_time=40
+launch_time=50
+launch_time=65

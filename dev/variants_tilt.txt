@@ -1,0 +1,5 @@
+policy_path=runs/ppo9/rl3_policy_4849600.npz sl_path=runs/ppo9/rl2_sl_4849600.npz
+policy_path=runs/ppo9/rl3_policy_4849600.npz sl_path=runs/ppo9/rl2_sl_4849600.npz inclination=85 heading=0
+policy_path=runs/ppo9/rl3_policy_4849600.npz sl_path=runs/ppo9/rl2_sl_4849600.npz inclination=85 heading=90
+policy_path=runs/ppo9/rl3_policy_4849600.npz sl_path=runs/ppo9/rl2_sl_4849600.npz inclination=85 heading=180
+policy_path=runs/ppo9/rl3_policy_4849600.npz sl_path=runs/ppo9/rl2_sl_4849600.npz inclination=85 heading=270

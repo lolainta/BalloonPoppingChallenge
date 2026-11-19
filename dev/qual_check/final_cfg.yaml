@@ -1,0 +1,8 @@
+# Secret-free local evaluation config for the finale dry run (scenario 40): no team fields, no submission packing.
+agent_module_path: BalloonPoppingGymEnv/agents/bpc_s40_cand_417870923.py
+agent_class_name: RL3Agent
+agent_kwargs: {}
+agent_name: "s40b@417870923 (finale dry run)"
+scenario_number: 40
+render_mode: null
+leaderboard_submission: false

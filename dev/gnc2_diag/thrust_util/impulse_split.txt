@@ -1,0 +1,3 @@
+their        per run (m/s): avail 397 used 365 | int f_z 295 (gravity 292) int |f_h| 173 | net accel: tangential sum +24 (speed-up part 61) normal/turning 147
+ours_strict  per run (m/s): avail 397 used 358 | int f_z 297 (gravity 292) int |f_h| 167 | net accel: tangential sum +16 (speed-up part 62) normal/turning 136
+ours_free    per run (m/s): avail 397 used 368 | int f_z 307 (gravity 292) int |f_h| 174 | net accel: tangential sum +31 (speed-up part 61) normal/turning 152

@@ -1,0 +1,5 @@
+# A: all options off, pre vs post; 3-output (s4res) and no-head (s4ent) checkpoints
+A3_pre $TMPDIR/evalopts_pre ./runs/s4res/rl3_policy_99561600.npz ./runs/s4res/rl2_sl_99561600.npz 10000
+A3_post ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4res/rl3_policy_99561600.npz ./runs/s4res/rl2_sl_99561600.npz 10000
+A0_pre $TMPDIR/evalopts_pre ./runs/s4ent/rl3_policy_88761600.npz ./runs/s4ent/rl2_sl_88761600.npz 10000
+A0_post ./.claude/worktrees/wf_0c28065b-568-1 ./runs/s4ent/rl3_policy_88761600.npz ./runs/s4ent/rl2_sl_88761600.npz 10000
